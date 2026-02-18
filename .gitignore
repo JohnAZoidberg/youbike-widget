@@ -1,0 +1,25 @@
+# Gradle
+.gradle/
+build/
+app/build/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Android
+local.properties
+*.keystore
+*.jks
+
+# Nix
+result
+result-*
+
+# Misc
+*.log
+.DS_Store
+
+# Sample data (downloaded for analysis)
+sample_data.json

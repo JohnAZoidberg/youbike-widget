@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">YouBike Widget</string>
+    <string name="widget_name">YouBike 站點</string>
+    <string name="widget_description">顯示附近及收藏的 YouBike 站點狀態</string>
+</resources>
