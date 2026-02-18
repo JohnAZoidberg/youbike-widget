@@ -30,15 +30,11 @@ An Android widget that displays real-time YouBike station availability in Taipei
 # Enter development shell
 nix develop
 
-# First build requires patching aapt2 for NixOS
-patchelf --set-interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)" \
-  ~/.gradle/caches/*/transforms/*/transformed/aapt2-*/aapt2
-
-# Build debug APK
-./gradlew assembleDebug
+# Build debug APK (uses steam-run for FHS compatibility)
+build-apk assembleDebug
 
 # Build release APK
-./gradlew assembleRelease
+build-apk assembleRelease
 ```
 
 The APK will be at `app/build/outputs/apk/debug/app-debug.apk`.

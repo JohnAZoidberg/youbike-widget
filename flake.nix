@@ -58,8 +58,9 @@
             echo "Java: $JAVA_HOME"
             echo ""
             echo "Commands:"
-            echo "  build-apk assembleDebug   - Build debug APK (uses steam-run)"
+            echo "  build-apk assembleDebug   - Build debug APK"
             echo "  build-apk assembleRelease - Build release APK"
+            echo "  adb install -r app/build/outputs/apk/debug/app-debug.apk"
           '';
         };
       }
