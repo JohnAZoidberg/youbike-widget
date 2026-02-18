@@ -8,17 +8,19 @@ import io.ktor.client.engine.android.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlin.math.*
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
-import kotlin.math.*
 
 class YouBikeRepository {
     private val client = HttpClient(Android) {
         install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-                isLenient = true
-            })
+            json(
+                Json {
+                    ignoreUnknownKeys = true
+                    isLenient = true
+                }
+            )
         }
     }
 
@@ -55,8 +57,10 @@ class YouBikeRepository {
             .filter { it.isActive && it.sno !in excludeIds }
             .map { station ->
                 val distance = calculateDistance(
-                    location.latitude, location.longitude,
-                    station.latitude, station.longitude
+                    location.latitude,
+                    location.longitude,
+                    station.latitude,
+                    station.longitude
                 )
                 StationWithDistance(station, distance)
             }
@@ -64,23 +68,19 @@ class YouBikeRepository {
             .take(count)
     }
 
-    fun addDistanceToFavorites(
-        favorites: List<StationWithDistance>,
-        location: Location
-    ): List<StationWithDistance> {
+    fun addDistanceToFavorites(favorites: List<StationWithDistance>, location: Location): List<StationWithDistance> {
         return favorites.map { fav ->
             val distance = calculateDistance(
-                location.latitude, location.longitude,
-                fav.station.latitude, fav.station.longitude
+                location.latitude,
+                location.longitude,
+                fav.station.latitude,
+                fav.station.longitude
             )
             fav.copy(distanceMeters = distance)
         }
     }
 
-    private fun calculateDistance(
-        lat1: Double, lon1: Double,
-        lat2: Double, lon2: Double
-    ): Int {
+    private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Int {
         val r = 6371000.0 // Earth's radius in meters
         val phi1 = Math.toRadians(lat1)
         val phi2 = Math.toRadians(lat2)
@@ -88,7 +88,7 @@ class YouBikeRepository {
         val deltaLambda = Math.toRadians(lon2 - lon1)
 
         val a = sin(deltaPhi / 2).pow(2) +
-                cos(phi1) * cos(phi2) * sin(deltaLambda / 2).pow(2)
+            cos(phi1) * cos(phi2) * sin(deltaLambda / 2).pow(2)
         val c = 2 * atan2(sqrt(a), sqrt(1 - a))
 
         return (r * c).toInt()

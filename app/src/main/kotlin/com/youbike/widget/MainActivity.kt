@@ -46,9 +46,9 @@ class MainActivity : ComponentActivity() {
         return ContextCompat.checkSelfPermission(
             this, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED ||
-        ContextCompat.checkSelfPermission(
-            this, Manifest.permission.ACCESS_COARSE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun requestLocationPermission() {
@@ -62,11 +62,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainScreen(
-    hasLocationPermission: Boolean,
-    onRequestPermission: () -> Unit,
-    onRefresh: () -> Unit
-) {
+fun MainScreen(hasLocationPermission: Boolean, onRequestPermission: () -> Unit, onRefresh: () -> Unit) {
     var permissionGranted by remember { mutableStateOf(hasLocationPermission) }
 
     Surface(

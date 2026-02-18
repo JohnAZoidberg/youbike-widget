@@ -1,8 +1,8 @@
 package com.youbike.widget.data
 
+import java.util.Locale
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import java.util.Locale
 
 @Serializable
 data class Station(
@@ -16,7 +16,7 @@ data class Station(
     @SerialName("available_return_bikes")
     val availableReturnBikes: Int,
     val updateTime: String,
-    val act: String,
+    val act: String
 ) {
     val isActive: Boolean
         get() = act == "1"
@@ -33,11 +33,11 @@ data class Station(
 
 data class StationWithDistance(
     val station: Station,
-    val distanceMeters: Int,
+    val distanceMeters: Int
 ) {
     val formattedDistance: String
         get() = when {
-            distanceMeters < 1000 -> "${distanceMeters} m"
+            distanceMeters < 1000 -> "$distanceMeters m"
             else -> String.format("%.1f km", distanceMeters / 1000.0)
         }
 }

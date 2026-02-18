@@ -6,7 +6,6 @@ import android.content.pm.PackageManager
 import android.location.Location
 import androidx.core.content.ContextCompat
 import androidx.glance.appwidget.GlanceAppWidgetManager
-import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.work.*
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
@@ -17,10 +16,10 @@ import com.youbike.widget.data.YouBikeRepository
 import com.youbike.widget.widget.WidgetData
 import com.youbike.widget.widget.YouBikeWidget
 import com.youbike.widget.widget.YouBikeWidgetDataStore
-import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.tasks.await
 
 class WidgetUpdateWorker(
     private val context: Context,
@@ -119,12 +118,14 @@ class WidgetUpdateWorker(
                 .build()
 
             val request = PeriodicWorkRequestBuilder<WidgetUpdateWorker>(
-                Config.UPDATE_INTERVAL_MINUTES, TimeUnit.MINUTES
+                Config.UPDATE_INTERVAL_MINUTES,
+                TimeUnit.MINUTES
             )
                 .setConstraints(constraints)
                 .setBackoffCriteria(
                     BackoffPolicy.EXPONENTIAL,
-                    1, TimeUnit.MINUTES
+                    1,
+                    TimeUnit.MINUTES
                 )
                 .build()
 

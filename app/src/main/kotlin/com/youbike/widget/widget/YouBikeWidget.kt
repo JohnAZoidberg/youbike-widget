@@ -11,9 +11,9 @@ import androidx.glance.action.clickable
 import androidx.glance.appwidget.*
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
+import androidx.glance.color.ColorProvider
 import androidx.glance.layout.*
 import androidx.glance.text.*
-import androidx.glance.color.ColorProvider
 import com.youbike.widget.MainActivity
 import com.youbike.widget.R
 import com.youbike.widget.data.StationWithDistance
@@ -24,7 +24,7 @@ data class WidgetData(
     val favoriteStations: List<StationWithDistance>,
     val lastUpdated: String,
     val hasLocation: Boolean,
-    val error: String? = null,
+    val error: String? = null
 )
 
 class YouBikeWidget : GlanceAppWidget() {
@@ -162,7 +162,12 @@ class YouBikeWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun StationRow(station: StationWithDistance, isFavorite: Boolean, locale: Locale, compact: Boolean = false) {
+    private fun StationRow(
+        station: StationWithDistance,
+        isFavorite: Boolean,
+        locale: Locale,
+        compact: Boolean = false
+    ) {
         val spotsColor = when {
             station.station.availableReturnBikes == 0 -> ColorProvider(Color(0xFFCC0000), Color(0xFFFF6666))
             station.station.availableReturnBikes <= 3 -> ColorProvider(Color(0xFFFF8800), Color(0xFFFFAA44))
