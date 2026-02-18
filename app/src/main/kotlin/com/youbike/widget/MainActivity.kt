@@ -19,27 +19,36 @@ import com.youbike.widget.worker.WidgetUpdateWorker
 
 class MainActivity : ComponentActivity() {
 
+    private var permissionState = mutableStateOf(false)
+
     private val locationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         val granted = permissions.entries.any { it.value }
-        if (granted) {
-            WidgetUpdateWorker.runOnce(this)
-        }
+        permissionState.value = granted
+        // Always refresh after permission dialog - we might have location now
+        WidgetUpdateWorker.runOnce(this)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        permissionState.value = hasLocationPermission()
 
         setContent {
             MaterialTheme {
                 MainScreen(
-                    hasLocationPermission = hasLocationPermission(),
+                    hasLocationPermission = permissionState.value,
                     onRequestPermission = { requestLocationPermission() },
                     onRefresh = { WidgetUpdateWorker.runOnce(this) }
                 )
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Re-check permission when returning to app (e.g., from settings)
+        permissionState.value = hasLocationPermission()
     }
 
     private fun hasLocationPermission(): Boolean {
@@ -63,8 +72,6 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen(hasLocationPermission: Boolean, onRequestPermission: () -> Unit, onRefresh: () -> Unit) {
-    var permissionGranted by remember { mutableStateOf(hasLocationPermission) }
-
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -91,7 +98,7 @@ fun MainScreen(hasLocationPermission: Boolean, onRequestPermission: () -> Unit, 
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            if (!permissionGranted) {
+            if (!hasLocationPermission) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -108,10 +115,7 @@ fun MainScreen(hasLocationPermission: Boolean, onRequestPermission: () -> Unit, 
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(12.dp))
-                        Button(onClick = {
-                            onRequestPermission()
-                            permissionGranted = true
-                        }) {
+                        Button(onClick = onRequestPermission) {
                             Text(stringResource(R.string.grant_permission))
                         }
                     }
