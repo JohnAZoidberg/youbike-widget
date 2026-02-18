@@ -12,6 +12,6 @@ object Config {
         "500112054"
     )
 
-    const val MAX_NEAREST_STATIONS = 20
+    const val MAX_NEAREST_STATIONS = 25
     const val UPDATE_INTERVAL_MINUTES = 10L
 }
