@@ -8,6 +8,7 @@ import io.ktor.client.engine.android.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import kotlin.math.*
 
@@ -22,7 +23,18 @@ class YouBikeRepository {
     }
 
     suspend fun fetchStations(): List<Station> {
-        return client.get(Config.API_URL).body()
+        var lastException: Exception? = null
+        repeat(2) { attempt ->
+            try {
+                return client.get(Config.API_URL).body()
+            } catch (e: Exception) {
+                lastException = e
+                if (attempt == 0) {
+                    delay(1000)
+                }
+            }
+        }
+        throw lastException!!
     }
 
     fun getFavoriteStations(allStations: List<Station>): List<StationWithDistance> {
