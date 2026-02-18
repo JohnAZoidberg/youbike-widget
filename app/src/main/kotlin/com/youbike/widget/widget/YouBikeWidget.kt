@@ -1,21 +1,22 @@
 package com.youbike.widget.widget
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.*
 import androidx.glance.action.ActionParameters
-import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.*
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
+import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.color.ColorProvider
 import androidx.glance.layout.*
 import androidx.glance.text.*
-import com.youbike.widget.MainActivity
 import com.youbike.widget.R
 import com.youbike.widget.data.StationWithDistance
 import com.youbike.widget.worker.WidgetUpdateWorker
@@ -187,11 +188,17 @@ class YouBikeWidget : GlanceAppWidget() {
             else -> ColorProvider(Color(0xFF008800), Color(0xFF66CC66))
         }
 
+        val lat = station.station.latitude
+        val lon = station.station.longitude
+        val label = station.station.getDisplayName(locale)
+        val geoUri = Uri.parse("geo:$lat,$lon?q=$lat,$lon($label)")
+        val mapIntent = Intent(Intent.ACTION_VIEW, geoUri)
+
         Row(
             modifier = GlanceModifier
                 .fillMaxWidth()
                 .padding(vertical = if (compact) 1.dp else 2.dp)
-                .clickable(actionStartActivity<MainActivity>()),
+                .clickable(actionStartActivity(mapIntent)),
             horizontalAlignment = Alignment.Start
         ) {
             Text(
