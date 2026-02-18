@@ -22,6 +22,19 @@ An Android widget that displays real-time YouBike station availability in Taipei
 - Location permission (optional, for nearest stations)
 - Internet connection
 
+## Quick Start (NixOS)
+
+```bash
+# Enter development shell
+nix develop
+
+# Build and install on connected phone
+build-apk assembleDebug
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+Then add the widget: long-press home screen → Widgets → **YouBike 站點**
+
 ## Building
 
 ### Using Nix (NixOS)
