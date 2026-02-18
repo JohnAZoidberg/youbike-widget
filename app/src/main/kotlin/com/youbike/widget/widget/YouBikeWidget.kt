@@ -9,6 +9,8 @@ import androidx.glance.*
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.*
+import androidx.glance.appwidget.lazy.LazyColumn
+import androidx.glance.appwidget.lazy.items
 import androidx.glance.layout.*
 import androidx.glance.text.*
 import androidx.glance.color.ColorProvider
@@ -50,8 +52,35 @@ class YouBikeWidget : GlanceAppWidget() {
                 } else if (data.error != null) {
                     ErrorContent(data.error)
                 } else {
-                    StationTable(data)
-                    Spacer(GlanceModifier.height(8.dp))
+                    // Header row
+                    HeaderRow()
+                    Spacer(GlanceModifier.height(4.dp))
+
+                    // Scrollable station list
+                    LazyColumn(modifier = GlanceModifier.defaultWeight()) {
+                        // Nearest stations
+                        if (data.hasLocation && data.nearestStations.isNotEmpty()) {
+                            items(data.nearestStations) { station ->
+                                StationRow(station, isNearest = true)
+                            }
+                            item {
+                                // Divider
+                                Box(
+                                    modifier = GlanceModifier
+                                        .fillMaxWidth()
+                                        .height(1.dp)
+                                        .background(ColorProvider(Color(0xFFE0E0E0), Color(0xFF404040)))
+                                ) {}
+                            }
+                        }
+
+                        // Favorite stations
+                        items(data.favoriteStations) { station ->
+                            StationRow(station, isNearest = false)
+                        }
+                    }
+
+                    Spacer(GlanceModifier.height(4.dp))
                     TimestampRow(data.lastUpdated)
                 }
             }
@@ -87,38 +116,6 @@ class YouBikeWidget : GlanceAppWidget() {
                     fontSize = 12.sp
                 )
             )
-        }
-    }
-
-    @Composable
-    private fun StationTable(data: WidgetData) {
-        Column(modifier = GlanceModifier.fillMaxWidth()) {
-            // Header
-            HeaderRow()
-
-            Spacer(GlanceModifier.height(4.dp))
-
-            // Nearest stations (if available)
-            if (data.hasLocation && data.nearestStations.isNotEmpty()) {
-                data.nearestStations.forEach { station ->
-                    StationRow(station, isNearest = true)
-                    Spacer(GlanceModifier.height(2.dp))
-                }
-                // Divider
-                Box(
-                    modifier = GlanceModifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(ColorProvider(Color(0xFFE0E0E0), Color(0xFF404040)))
-                ) {}
-                Spacer(GlanceModifier.height(2.dp))
-            }
-
-            // Favorite stations
-            data.favoriteStations.forEach { station ->
-                StationRow(station, isNearest = false)
-                Spacer(GlanceModifier.height(2.dp))
-            }
         }
     }
 
@@ -165,7 +162,7 @@ class YouBikeWidget : GlanceAppWidget() {
         }
 
         Row(
-            modifier = GlanceModifier.fillMaxWidth(),
+            modifier = GlanceModifier.fillMaxWidth().padding(vertical = 2.dp),
             horizontalAlignment = Alignment.Start
         ) {
             Text(

@@ -87,11 +87,28 @@ python find_stations.py --areas
 
 ## Installation
 
-1. Transfer the APK to your Android device
+### Via ADB (recommended)
+
+Connect your phone via USB with USB debugging enabled:
+
+```bash
+# Check device is connected
+nix develop --command adb devices
+
+# Install (use -r to reinstall/update)
+nix develop --command adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+### Manual Installation
+
+1. Transfer `app/build/outputs/apk/debug/app-debug.apk` to your device
 2. Install the APK (enable "Install from unknown sources" if needed)
-3. Open the app and grant location permission
-4. Long-press on your home screen → Widgets → YouBike Widget
-5. Add the widget to your home screen
+
+### After Installing
+
+1. Open the **YouBike Widget** app and grant location permission
+2. Long-press on your home screen → Widgets → **YouBike 站點**
+3. Add the widget to your home screen
 
 ## Data Source
 
