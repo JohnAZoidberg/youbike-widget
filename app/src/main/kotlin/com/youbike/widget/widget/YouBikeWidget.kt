@@ -52,24 +52,25 @@ class YouBikeWidget : GlanceAppWidget() {
                     .padding(12.dp)
                     .clickable(actionStartActivity<MainActivity>())
             ) {
+                val hasStationData = data != null &&
+                    (data.nearestStations.isNotEmpty() || data.favoriteStations.isNotEmpty())
+
                 if (data == null) {
                     LoadingContent(context)
-                } else if (data.error != null) {
+                } else if (!hasStationData && data.error != null) {
+                    // Only show full error if we have no cached data
                     ErrorContent(data.error)
-                } else {
-                    // Header row
+                } else if (hasStationData) {
+                    // Show station data (even if there's an error, use cached data)
                     HeaderRow(context)
                     Spacer(GlanceModifier.height(4.dp))
 
-                    // Scrollable station list
                     LazyColumn(modifier = GlanceModifier.defaultWeight()) {
-                        // Nearest stations
                         if (data.hasLocation && data.nearestStations.isNotEmpty()) {
                             items(data.nearestStations) { station ->
                                 StationRow(station, isNearest = true, locale = locale)
                             }
                             item {
-                                // Divider
                                 Box(
                                     modifier = GlanceModifier
                                         .fillMaxWidth()
@@ -79,14 +80,15 @@ class YouBikeWidget : GlanceAppWidget() {
                             }
                         }
 
-                        // Favorite stations
                         items(data.favoriteStations) { station ->
                             StationRow(station, isNearest = false, locale = locale)
                         }
                     }
 
                     Spacer(GlanceModifier.height(4.dp))
-                    TimestampRow(context, data.lastUpdated)
+                    FooterRow(context, data.lastUpdated, data.error)
+                } else {
+                    LoadingContent(context)
                 }
             }
         }
@@ -203,15 +205,28 @@ class YouBikeWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun TimestampRow(context: Context, timestamp: String) {
+    private fun FooterRow(context: Context, timestamp: String, error: String?) {
         Row(
             modifier = GlanceModifier.fillMaxWidth(),
             horizontalAlignment = Alignment.End
         ) {
+            if (error != null) {
+                Text(
+                    text = "⚠ ",
+                    style = TextStyle(
+                        color = ColorProvider(Color(0xFFCC0000), Color(0xFFFF6666)),
+                        fontSize = 10.sp
+                    )
+                )
+            }
             Text(
                 text = context.getString(R.string.update_time, timestamp),
                 style = TextStyle(
-                    color = ColorProvider(Color(0xFF999999), Color(0xFF666666)),
+                    color = if (error != null) {
+                        ColorProvider(Color(0xFFCC0000), Color(0xFFFF6666))
+                    } else {
+                        ColorProvider(Color(0xFF999999), Color(0xFF666666))
+                    },
                     fontSize = 10.sp
                 )
             )
