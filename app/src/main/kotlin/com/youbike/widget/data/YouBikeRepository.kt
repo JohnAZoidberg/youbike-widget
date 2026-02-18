@@ -62,7 +62,13 @@ class YouBikeRepository {
                     station.latitude,
                     station.longitude
                 )
-                StationWithDistance(station, distance)
+                val bearing = calculateBearing(
+                    location.latitude,
+                    location.longitude,
+                    station.latitude,
+                    station.longitude
+                )
+                StationWithDistance(station, distance, bearing)
             }
             .sortedBy { it.distanceMeters }
             .take(count)
@@ -76,7 +82,13 @@ class YouBikeRepository {
                 fav.station.latitude,
                 fav.station.longitude
             )
-            fav.copy(distanceMeters = distance)
+            val bearing = calculateBearing(
+                location.latitude,
+                location.longitude,
+                fav.station.latitude,
+                fav.station.longitude
+            )
+            fav.copy(distanceMeters = distance, bearingDegrees = bearing)
         }
     }
 
@@ -92,5 +104,17 @@ class YouBikeRepository {
         val c = 2 * atan2(sqrt(a), sqrt(1 - a))
 
         return (r * c).toInt()
+    }
+
+    private fun calculateBearing(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Float {
+        val phi1 = Math.toRadians(lat1)
+        val phi2 = Math.toRadians(lat2)
+        val deltaLambda = Math.toRadians(lon2 - lon1)
+
+        val x = cos(phi2) * sin(deltaLambda)
+        val y = cos(phi1) * sin(phi2) - sin(phi1) * cos(phi2) * cos(deltaLambda)
+
+        val bearing = Math.toDegrees(atan2(x, y))
+        return bearing.toFloat()
     }
 }

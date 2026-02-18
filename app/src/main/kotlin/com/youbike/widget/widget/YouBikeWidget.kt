@@ -148,6 +148,12 @@ class YouBikeWidget : GlanceAppWidget() {
                 modifier = GlanceModifier.defaultWeight(),
                 style = headerStyle()
             )
+            // Direction arrow column (no header text needed)
+            Text(
+                text = "",
+                modifier = GlanceModifier.width(20.dp),
+                style = headerStyle()
+            )
             Text(
                 text = context.getString(R.string.header_distance),
                 modifier = GlanceModifier.width(56.dp),
@@ -202,6 +208,11 @@ class YouBikeWidget : GlanceAppWidget() {
                 modifier = GlanceModifier.defaultWeight(),
                 style = if (compact) compactCellStyle() else cellStyle(),
                 maxLines = 1
+            )
+            Text(
+                text = station.directionArrow,
+                modifier = GlanceModifier.width(20.dp),
+                style = if (compact) compactCellStyle() else cellStyle()
             )
             Text(
                 text = if (station.distanceMeters >= 0) station.formattedDistance else "-",

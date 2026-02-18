@@ -76,9 +76,12 @@ object YouBikeWidgetDataStore {
 @kotlinx.serialization.Serializable
 private data class SerializableStationWithDistance(
     val station: Station,
-    val distanceMeters: Int
+    val distanceMeters: Int,
+    val bearingDegrees: Float = 0f
 ) {
-    fun toStationWithDistance() = StationWithDistance(station, distanceMeters)
+    fun toStationWithDistance() = StationWithDistance(station, distanceMeters, bearingDegrees)
 }
 
-private fun StationWithDistance.toSerializable() = SerializableStationWithDistance(station, distanceMeters)
+private fun StationWithDistance.toSerializable(): SerializableStationWithDistance {
+    return SerializableStationWithDistance(station, distanceMeters, bearingDegrees)
+}
