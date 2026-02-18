@@ -48,7 +48,7 @@ class YouBikeRepository {
     fun getNearestStations(
         allStations: List<Station>,
         location: Location,
-        count: Int = Config.NEAREST_STATIONS_COUNT,
+        count: Int = Config.MAX_NEAREST_STATIONS,
         excludeIds: Set<String> = emptySet()
     ): List<StationWithDistance> {
         return allStations

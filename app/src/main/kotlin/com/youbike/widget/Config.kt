@@ -9,6 +9,6 @@ object Config {
         "500112054", // 松山高中
     )
 
-    const val NEAREST_STATIONS_COUNT = 2
+    const val MAX_NEAREST_STATIONS = 20
     const val UPDATE_INTERVAL_MINUTES = 10L
 }

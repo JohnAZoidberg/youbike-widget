@@ -43,13 +43,23 @@ class YouBikeWidget : GlanceAppWidget() {
     private fun WidgetContent(data: WidgetData?) {
         val context = LocalContext.current
         val locale = context.resources.configuration.locales[0]
+        val size = LocalSize.current
+
+        // Calculate how many station rows can fit
+        // Padding: 24dp total, Header: ~18dp, Footer: ~14dp, Each row: ~22dp
+        val heightDp = size.height.value
+        val isCompact = heightDp < 100
+        val headerFooterHeight = if (isCompact) 0f else 36f // header + footer + spacers
+        val availableHeight = heightDp - 24f - headerFooterHeight // subtract padding
+        val rowHeight = 22f
+        val maxRows = (availableHeight / rowHeight).toInt().coerceAtLeast(1)
 
         GlanceTheme {
             Column(
                 modifier = GlanceModifier
                     .fillMaxSize()
                     .background(ColorProvider(Color.White, Color(0xFF1E1E1E)))
-                    .padding(12.dp)
+                    .padding(if (isCompact) 8.dp else 12.dp)
                     .clickable(actionStartActivity<MainActivity>())
             ) {
                 val hasStationData = data != null &&
@@ -58,35 +68,31 @@ class YouBikeWidget : GlanceAppWidget() {
                 if (data == null) {
                     LoadingContent(context)
                 } else if (!hasStationData && data.error != null) {
-                    // Only show full error if we have no cached data
                     ErrorContent(data.error)
                 } else if (hasStationData) {
-                    // Show station data (even if there's an error, use cached data)
-                    HeaderRow(context)
-                    Spacer(GlanceModifier.height(4.dp))
+                    if (!isCompact) {
+                        HeaderRow(context)
+                        Spacer(GlanceModifier.height(4.dp))
+                    }
+
+                    // Combine all stations and sort by distance
+                    val favoriteIds = data.favoriteStations.map { it.station.sno }.toSet()
+                    val allStations = (data.favoriteStations + data.nearestStations)
+                        .distinctBy { it.station.sno }
+                        .sortedBy { it.distanceMeters.let { d -> if (d < 0) Int.MAX_VALUE else d } }
+                        .take(maxRows)
 
                     LazyColumn(modifier = GlanceModifier.defaultWeight()) {
-                        if (data.hasLocation && data.nearestStations.isNotEmpty()) {
-                            items(data.nearestStations) { station ->
-                                StationRow(station, isNearest = true, locale = locale)
-                            }
-                            item {
-                                Box(
-                                    modifier = GlanceModifier
-                                        .fillMaxWidth()
-                                        .height(1.dp)
-                                        .background(ColorProvider(Color(0xFFE0E0E0), Color(0xFF404040)))
-                                ) {}
-                            }
-                        }
-
-                        items(data.favoriteStations) { station ->
-                            StationRow(station, isNearest = false, locale = locale)
+                        items(allStations) { station ->
+                            val isFavorite = station.station.sno in favoriteIds
+                            StationRow(station, isFavorite = isFavorite, locale = locale, compact = isCompact)
                         }
                     }
 
-                    Spacer(GlanceModifier.height(4.dp))
-                    FooterRow(context, data.lastUpdated, data.error)
+                    if (!isCompact) {
+                        Spacer(GlanceModifier.height(4.dp))
+                        FooterRow(context, data.lastUpdated, data.error)
+                    }
                 } else {
                     LoadingContent(context)
                 }
@@ -156,7 +162,7 @@ class YouBikeWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun StationRow(station: StationWithDistance, isNearest: Boolean, locale: Locale) {
+    private fun StationRow(station: StationWithDistance, isFavorite: Boolean, locale: Locale, compact: Boolean = false) {
         val spotsColor = when {
             station.station.availableReturnBikes == 0 -> ColorProvider(Color(0xFFCC0000), Color(0xFFFF6666))
             station.station.availableReturnBikes <= 3 -> ColorProvider(Color(0xFFFF8800), Color(0xFFFFAA44))
@@ -169,35 +175,35 @@ class YouBikeWidget : GlanceAppWidget() {
         }
 
         Row(
-            modifier = GlanceModifier.fillMaxWidth().padding(vertical = 2.dp),
+            modifier = GlanceModifier.fillMaxWidth().padding(vertical = if (compact) 1.dp else 2.dp),
             horizontalAlignment = Alignment.Start
         ) {
             Text(
-                text = (if (isNearest) "📍 " else "⭐ ") + station.station.getDisplayName(locale),
+                text = (if (isFavorite) "⭐ " else "") + station.station.getDisplayName(locale),
                 modifier = GlanceModifier.defaultWeight(),
-                style = cellStyle(),
+                style = if (compact) compactCellStyle() else cellStyle(),
                 maxLines = 1
             )
             Text(
                 text = if (station.distanceMeters >= 0) station.formattedDistance else "-",
-                modifier = GlanceModifier.width(56.dp),
-                style = cellStyle()
+                modifier = GlanceModifier.width(if (compact) 48.dp else 56.dp),
+                style = if (compact) compactCellStyle() else cellStyle()
             )
             Text(
                 text = station.station.availableReturnBikes.toString(),
-                modifier = GlanceModifier.width(40.dp),
+                modifier = GlanceModifier.width(if (compact) 32.dp else 40.dp),
                 style = TextStyle(
                     color = spotsColor,
-                    fontSize = 12.sp,
+                    fontSize = if (compact) 11.sp else 12.sp,
                     fontWeight = FontWeight.Medium
                 )
             )
             Text(
                 text = station.station.availableRentBikes.toString(),
-                modifier = GlanceModifier.width(40.dp),
+                modifier = GlanceModifier.width(if (compact) 32.dp else 40.dp),
                 style = TextStyle(
                     color = bikesColor,
-                    fontSize = 12.sp,
+                    fontSize = if (compact) 11.sp else 12.sp,
                     fontWeight = FontWeight.Medium
                 )
             )
@@ -242,6 +248,11 @@ class YouBikeWidget : GlanceAppWidget() {
     private fun cellStyle() = TextStyle(
         color = ColorProvider(Color(0xFF444444), Color(0xFFBBBBBB)),
         fontSize = 12.sp
+    )
+
+    private fun compactCellStyle() = TextStyle(
+        color = ColorProvider(Color(0xFF444444), Color(0xFFBBBBBB)),
+        fontSize = 11.sp
     )
 }
 
