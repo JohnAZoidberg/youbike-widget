@@ -11,11 +11,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.youbike.widget.widget.WidgetData
+import com.youbike.widget.widget.YouBikeWidgetDataStore
 import com.youbike.widget.worker.WidgetUpdateWorker
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -130,9 +134,47 @@ fun MainScreen(hasLocationPermission: Boolean, onRequestPermission: () -> Unit, 
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            OutlinedButton(onClick = onRefresh) {
+            val context = LocalContext.current
+            val scope = rememberCoroutineScope()
+            var widgetData by remember { mutableStateOf<WidgetData?>(null) }
+
+            LaunchedEffect(Unit) {
+                widgetData = YouBikeWidgetDataStore.getData(context)
+            }
+
+            OutlinedButton(onClick = {
+                onRefresh()
+                scope.launch {
+                    kotlinx.coroutines.delay(2000)
+                    widgetData = YouBikeWidgetDataStore.getData(context)
+                }
+            }) {
                 Text(stringResource(R.string.refresh_now))
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            widgetData?.let { data ->
+                Text(
+                    text = "Nearest: ${data.nearestStations.size}, Favorites: ${data.favoriteStations.size}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = "Fetched: ${data.lastUpdated}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    text = "API data: ${data.apiUpdateTime ?: "unknown"}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    text = "Has location: ${data.hasLocation}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            } ?: Text(
+                text = "No data yet",
+                style = MaterialTheme.typography.bodySmall
+            )
 
             Spacer(modifier = Modifier.height(48.dp))
 

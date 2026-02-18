@@ -16,6 +16,7 @@ object YouBikeWidgetDataStore {
     private val NEAREST_STATIONS = stringPreferencesKey("nearest_stations")
     private val FAVORITE_STATIONS = stringPreferencesKey("favorite_stations")
     private val LAST_UPDATED = stringPreferencesKey("last_updated")
+    private val API_UPDATE_TIME = stringPreferencesKey("api_update_time")
     private val HAS_LOCATION = booleanPreferencesKey("has_location")
     private val ERROR = stringPreferencesKey("error")
 
@@ -27,6 +28,9 @@ object YouBikeWidgetDataStore {
             prefs[FAVORITE_STATIONS] = json.encodeToString(data.favoriteStations.map { it.toSerializable() })
             prefs[LAST_UPDATED] = data.lastUpdated
             prefs[HAS_LOCATION] = data.hasLocation
+            if (data.apiUpdateTime != null) {
+                prefs[API_UPDATE_TIME] = data.apiUpdateTime
+            }
             if (data.error != null) {
                 prefs[ERROR] = data.error
             } else {
@@ -51,6 +55,7 @@ object YouBikeWidgetDataStore {
                 nearestStations = nearest,
                 favoriteStations = favorites,
                 lastUpdated = lastUpdated,
+                apiUpdateTime = prefs[API_UPDATE_TIME],
                 hasLocation = prefs[HAS_LOCATION] ?: false,
                 error = prefs[ERROR]
             )

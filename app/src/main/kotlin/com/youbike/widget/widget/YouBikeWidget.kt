@@ -16,7 +16,10 @@ import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.color.ColorProvider
 import androidx.glance.layout.*
+import androidx.glance.appwidget.lazy.LazyColumn
+import androidx.glance.appwidget.lazy.items
 import androidx.glance.text.*
+import android.util.Log
 import com.youbike.widget.R
 import com.youbike.widget.data.StationWithDistance
 import com.youbike.widget.worker.WidgetUpdateWorker
@@ -26,12 +29,14 @@ data class WidgetData(
     val nearestStations: List<StationWithDistance>,
     val favoriteStations: List<StationWithDistance>,
     val lastUpdated: String,
+    val apiUpdateTime: String? = null,
     val hasLocation: Boolean,
     val error: String? = null
 )
 
 class YouBikeWidget : GlanceAppWidget() {
 
+    // Use Exact mode - renders for exact sizes provided by launcher
     override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -47,15 +52,11 @@ class YouBikeWidget : GlanceAppWidget() {
         val context = LocalContext.current
         val locale = context.resources.configuration.locales[0]
         val size = LocalSize.current
-
-        // Calculate how many station rows can fit
-        // Padding: 24dp total, Header: ~18dp, Footer: ~14dp, Each row: ~22dp
         val heightDp = size.height.value
+        val widthDp = size.width.value
         val isCompact = heightDp < 100
-        val headerFooterHeight = if (isCompact) 0f else 36f // header + footer + spacers
-        val availableHeight = heightDp - 24f - headerFooterHeight // subtract padding
-        val rowHeight = 22f
-        val maxRows = (availableHeight / rowHeight).toInt().coerceAtLeast(1)
+
+        Log.d("YouBikeWidget", "Widget size: ${widthDp}x${heightDp}dp")
 
         GlanceTheme {
             Column(
@@ -72,35 +73,26 @@ class YouBikeWidget : GlanceAppWidget() {
                 } else if (!hasStationData && data.error != null) {
                     ErrorContent(data.error)
                 } else if (hasStationData) {
-                    if (!isCompact) {
-                        HeaderRow(context)
-                        Spacer(GlanceModifier.height(4.dp))
-                    }
+                    // Always show header
+                    HeaderRow(context)
 
                     // Combine all stations and sort by distance
                     val favoriteIds = data.favoriteStations.map { it.station.sno }.toSet()
                     val allStations = (data.favoriteStations + data.nearestStations)
                         .distinctBy { it.station.sno }
                         .sortedBy { it.distanceMeters.let { d -> if (d < 0) Int.MAX_VALUE else d } }
-                        .take(maxRows)
 
-                    // Station rows - each row opens app
-                    Column(modifier = GlanceModifier.defaultWeight().fillMaxWidth()) {
-                        allStations.forEach { station ->
+                    // Use LazyColumn to fill available space
+                    LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
+                        items(allStations) { station ->
                             val isFavorite = station.station.sno in favoriteIds
                             StationRow(
                                 station,
                                 isFavorite = isFavorite,
                                 locale = locale,
-                                compact = isCompact
+                                compact = false
                             )
                         }
-                    }
-
-                    // Footer - triggers refresh
-                    if (!isCompact) {
-                        Spacer(GlanceModifier.height(4.dp))
-                        FooterRow(context, data.lastUpdated, data.error)
                     }
                 } else {
                     LoadingContent(context)
@@ -112,7 +104,9 @@ class YouBikeWidget : GlanceAppWidget() {
     @Composable
     private fun LoadingContent(context: Context) {
         Box(
-            modifier = GlanceModifier.fillMaxSize(),
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .clickable(actionRunCallback<RefreshAction>()),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -128,7 +122,9 @@ class YouBikeWidget : GlanceAppWidget() {
     @Composable
     private fun ErrorContent(error: String) {
         Box(
-            modifier = GlanceModifier.fillMaxSize(),
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .clickable(actionRunCallback<RefreshAction>()),
             contentAlignment = Alignment.Center
         ) {
             Text(

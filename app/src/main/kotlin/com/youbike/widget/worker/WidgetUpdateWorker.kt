@@ -52,11 +52,13 @@ class WidgetUpdateWorker(
             }
 
             val timestamp = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+            val apiUpdateTime = stations.firstOrNull()?.updateTime
 
             val widgetData = WidgetData(
                 nearestStations = nearest,
                 favoriteStations = favoritesWithDistance,
                 lastUpdated = timestamp,
+                apiUpdateTime = apiUpdateTime,
                 hasLocation = location != null
             )
 
