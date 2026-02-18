@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -80,14 +81,14 @@ fun MainScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "YouBike Widget",
+                text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.headlineLarge
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "請將小工具加入主畫面",
+                text = stringResource(R.string.add_widget_hint),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center
             )
@@ -106,7 +107,7 @@ fun MainScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "需要位置權限來顯示最近的站點",
+                            text = stringResource(R.string.location_permission_needed),
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center
                         )
@@ -115,13 +116,13 @@ fun MainScreen(
                             onRequestPermission()
                             permissionGranted = true
                         }) {
-                            Text("授權位置權限")
+                            Text(stringResource(R.string.grant_permission))
                         }
                     }
                 }
             } else {
                 Text(
-                    text = "✓ 位置權限已授權",
+                    text = stringResource(R.string.permission_granted),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -130,13 +131,13 @@ fun MainScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             OutlinedButton(onClick = onRefresh) {
-                Text("立即更新")
+                Text(stringResource(R.string.refresh_now))
             }
 
             Spacer(modifier = Modifier.height(48.dp))
 
             Text(
-                text = "收藏站點:",
+                text = stringResource(R.string.favorite_stations),
                 style = MaterialTheme.typography.titleMedium
             )
             Spacer(modifier = Modifier.height(8.dp))

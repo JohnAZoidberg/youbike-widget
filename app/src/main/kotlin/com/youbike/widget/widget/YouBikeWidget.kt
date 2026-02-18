@@ -15,7 +15,9 @@ import androidx.glance.layout.*
 import androidx.glance.text.*
 import androidx.glance.color.ColorProvider
 import com.youbike.widget.MainActivity
+import com.youbike.widget.R
 import com.youbike.widget.data.StationWithDistance
+import java.util.Locale
 
 data class WidgetData(
     val nearestStations: List<StationWithDistance>,
@@ -39,6 +41,9 @@ class YouBikeWidget : GlanceAppWidget() {
 
     @Composable
     private fun WidgetContent(data: WidgetData?) {
+        val context = LocalContext.current
+        val locale = context.resources.configuration.locales[0]
+
         GlanceTheme {
             Column(
                 modifier = GlanceModifier
@@ -48,12 +53,12 @@ class YouBikeWidget : GlanceAppWidget() {
                     .clickable(actionStartActivity<MainActivity>())
             ) {
                 if (data == null) {
-                    LoadingContent()
+                    LoadingContent(context)
                 } else if (data.error != null) {
                     ErrorContent(data.error)
                 } else {
                     // Header row
-                    HeaderRow()
+                    HeaderRow(context)
                     Spacer(GlanceModifier.height(4.dp))
 
                     // Scrollable station list
@@ -61,7 +66,7 @@ class YouBikeWidget : GlanceAppWidget() {
                         // Nearest stations
                         if (data.hasLocation && data.nearestStations.isNotEmpty()) {
                             items(data.nearestStations) { station ->
-                                StationRow(station, isNearest = true)
+                                StationRow(station, isNearest = true, locale = locale)
                             }
                             item {
                                 // Divider
@@ -76,25 +81,25 @@ class YouBikeWidget : GlanceAppWidget() {
 
                         // Favorite stations
                         items(data.favoriteStations) { station ->
-                            StationRow(station, isNearest = false)
+                            StationRow(station, isNearest = false, locale = locale)
                         }
                     }
 
                     Spacer(GlanceModifier.height(4.dp))
-                    TimestampRow(data.lastUpdated)
+                    TimestampRow(context, data.lastUpdated)
                 }
             }
         }
     }
 
     @Composable
-    private fun LoadingContent() {
+    private fun LoadingContent(context: Context) {
         Box(
             modifier = GlanceModifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "載入中...",
+                text = context.getString(R.string.loading),
                 style = TextStyle(
                     color = ColorProvider(Color(0xFF666666), Color(0xFFAAAAAA)),
                     fontSize = 14.sp
@@ -120,28 +125,28 @@ class YouBikeWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun HeaderRow() {
+    private fun HeaderRow(context: Context) {
         Row(
             modifier = GlanceModifier.fillMaxWidth(),
             horizontalAlignment = Alignment.Start
         ) {
             Text(
-                text = "站點",
+                text = context.getString(R.string.header_station),
                 modifier = GlanceModifier.defaultWeight(),
                 style = headerStyle()
             )
             Text(
-                text = "距離",
+                text = context.getString(R.string.header_distance),
                 modifier = GlanceModifier.width(56.dp),
                 style = headerStyle()
             )
             Text(
-                text = "空位",
+                text = context.getString(R.string.header_spots),
                 modifier = GlanceModifier.width(40.dp),
                 style = headerStyle()
             )
             Text(
-                text = "車輛",
+                text = context.getString(R.string.header_bikes),
                 modifier = GlanceModifier.width(40.dp),
                 style = headerStyle()
             )
@@ -149,7 +154,7 @@ class YouBikeWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun StationRow(station: StationWithDistance, isNearest: Boolean) {
+    private fun StationRow(station: StationWithDistance, isNearest: Boolean, locale: Locale) {
         val spotsColor = when {
             station.station.availableReturnBikes == 0 -> ColorProvider(Color(0xFFCC0000), Color(0xFFFF6666))
             station.station.availableReturnBikes <= 3 -> ColorProvider(Color(0xFFFF8800), Color(0xFFFFAA44))
@@ -166,7 +171,7 @@ class YouBikeWidget : GlanceAppWidget() {
             horizontalAlignment = Alignment.Start
         ) {
             Text(
-                text = (if (isNearest) "📍 " else "⭐ ") + station.station.displayName,
+                text = (if (isNearest) "📍 " else "⭐ ") + station.station.getDisplayName(locale),
                 modifier = GlanceModifier.defaultWeight(),
                 style = cellStyle(),
                 maxLines = 1
@@ -198,13 +203,13 @@ class YouBikeWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun TimestampRow(timestamp: String) {
+    private fun TimestampRow(context: Context, timestamp: String) {
         Row(
             modifier = GlanceModifier.fillMaxWidth(),
             horizontalAlignment = Alignment.End
         ) {
             Text(
-                text = "更新: $timestamp",
+                text = context.getString(R.string.update_time, timestamp),
                 style = TextStyle(
                     color = ColorProvider(Color(0xFF999999), Color(0xFF666666)),
                     fontSize = 10.sp

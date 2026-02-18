@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">YouBike 小工具</string>
+    <string name="widget_name">YouBike 站點</string>
+    <string name="widget_description">顯示附近及收藏的 YouBike 站點狀態</string>
+
+    <!-- Widget UI -->
+    <string name="header_station">站點</string>
+    <string name="header_distance">距離</string>
+    <string name="header_spots">空位</string>
+    <string name="header_bikes">車輛</string>
+    <string name="loading">載入中…</string>
+    <string name="update_time">更新: %s</string>
+    <string name="update_failed">更新失敗: %s</string>
+
+    <!-- Main Activity -->
+    <string name="add_widget_hint">請將小工具加入主畫面</string>
+    <string name="location_permission_needed">需要位置權限來顯示最近的站點</string>
+    <string name="grant_permission">授權位置權限</string>
+    <string name="permission_granted">✓ 位置權限已授權</string>
+    <string name="refresh_now">立即更新</string>
+    <string name="favorite_stations">收藏站點:</string>
+</resources>

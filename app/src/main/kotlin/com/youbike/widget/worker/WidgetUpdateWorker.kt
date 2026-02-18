@@ -12,6 +12,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.youbike.widget.Config
+import com.youbike.widget.R
 import com.youbike.widget.data.YouBikeRepository
 import com.youbike.widget.widget.WidgetData
 import com.youbike.widget.widget.YouBikeWidget
@@ -65,7 +66,8 @@ class WidgetUpdateWorker(
 
             Result.success()
         } catch (e: Exception) {
-            YouBikeWidgetDataStore.saveError(context, "更新失敗: ${e.message}")
+            val errorMsg = context.getString(R.string.update_failed, e.message ?: "Unknown")
+            YouBikeWidgetDataStore.saveError(context, errorMsg)
             updateWidgets()
             Result.retry()
         }
