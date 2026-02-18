@@ -6,9 +6,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.*
+import androidx.glance.action.ActionParameters
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.*
+import androidx.glance.appwidget.action.ActionCallback
+import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
 import androidx.glance.color.ColorProvider
@@ -17,6 +20,7 @@ import androidx.glance.text.*
 import com.youbike.widget.MainActivity
 import com.youbike.widget.R
 import com.youbike.widget.data.StationWithDistance
+import com.youbike.widget.worker.WidgetUpdateWorker
 import java.util.Locale
 
 data class WidgetData(
@@ -60,7 +64,6 @@ class YouBikeWidget : GlanceAppWidget() {
                     .fillMaxSize()
                     .background(ColorProvider(Color.White, Color(0xFF1E1E1E)))
                     .padding(if (isCompact) 8.dp else 12.dp)
-                    .clickable(actionStartActivity<MainActivity>())
             ) {
                 val hasStationData = data != null &&
                     (data.nearestStations.isNotEmpty() || data.favoriteStations.isNotEmpty())
@@ -70,25 +73,39 @@ class YouBikeWidget : GlanceAppWidget() {
                 } else if (!hasStationData && data.error != null) {
                     ErrorContent(data.error)
                 } else if (hasStationData) {
-                    if (!isCompact) {
-                        HeaderRow(context)
-                        Spacer(GlanceModifier.height(4.dp))
-                    }
+                    // Main content area - opens app
+                    Column(
+                        modifier = GlanceModifier
+                            .defaultWeight()
+                            .fillMaxWidth()
+                            .clickable(actionStartActivity<MainActivity>())
+                    ) {
+                        if (!isCompact) {
+                            HeaderRow(context)
+                            Spacer(GlanceModifier.height(4.dp))
+                        }
 
-                    // Combine all stations and sort by distance
-                    val favoriteIds = data.favoriteStations.map { it.station.sno }.toSet()
-                    val allStations = (data.favoriteStations + data.nearestStations)
-                        .distinctBy { it.station.sno }
-                        .sortedBy { it.distanceMeters.let { d -> if (d < 0) Int.MAX_VALUE else d } }
-                        .take(maxRows)
+                        // Combine all stations and sort by distance
+                        val favoriteIds = data.favoriteStations.map { it.station.sno }.toSet()
+                        val allStations = (data.favoriteStations + data.nearestStations)
+                            .distinctBy { it.station.sno }
+                            .sortedBy { it.distanceMeters.let { d -> if (d < 0) Int.MAX_VALUE else d } }
+                            .take(maxRows)
 
-                    LazyColumn(modifier = GlanceModifier.defaultWeight()) {
-                        items(allStations) { station ->
-                            val isFavorite = station.station.sno in favoriteIds
-                            StationRow(station, isFavorite = isFavorite, locale = locale, compact = isCompact)
+                        LazyColumn(modifier = GlanceModifier.fillMaxWidth()) {
+                            items(allStations) { station ->
+                                val isFavorite = station.station.sno in favoriteIds
+                                StationRow(
+                                    station,
+                                    isFavorite = isFavorite,
+                                    locale = locale,
+                                    compact = isCompact
+                                )
+                            }
                         }
                     }
 
+                    // Footer - triggers refresh
                     if (!isCompact) {
                         Spacer(GlanceModifier.height(4.dp))
                         FooterRow(context, data.lastUpdated, data.error)
@@ -218,9 +235,18 @@ class YouBikeWidget : GlanceAppWidget() {
     @Composable
     private fun FooterRow(context: Context, timestamp: String, error: String?) {
         Row(
-            modifier = GlanceModifier.fillMaxWidth(),
+            modifier = GlanceModifier
+                .fillMaxWidth()
+                .clickable(actionRunCallback<RefreshAction>()),
             horizontalAlignment = Alignment.End
         ) {
+            Text(
+                text = "🔄 ",
+                style = TextStyle(
+                    color = ColorProvider(Color(0xFF999999), Color(0xFF666666)),
+                    fontSize = 10.sp
+                )
+            )
             if (error != null) {
                 Text(
                     text = "⚠ ",
@@ -259,6 +285,12 @@ class YouBikeWidget : GlanceAppWidget() {
         color = ColorProvider(Color(0xFF444444), Color(0xFFBBBBBB)),
         fontSize = 11.sp
     )
+}
+
+class RefreshAction : ActionCallback {
+    override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
+        WidgetUpdateWorker.runOnce(context)
+    }
 }
 
 class YouBikeWidgetReceiver : GlanceAppWidgetReceiver() {
