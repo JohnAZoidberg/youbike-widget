@@ -4,7 +4,74 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!-- Bicycle icon - centered in the safe zone (24dp inset) -->
+    <!-- Back wheel -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,30 L54,50 M44,40 L64,40 M54,50 C54,50 44,55 44,65 C44,72 48,78 54,78 C60,78 64,72 64,65 C64,55 54,50 54,50 M38,78 L44,65 M70,78 L64,65"/>
+        android:fillColor="#00000000"
+        android:strokeColor="#FF6B00"
+        android:strokeWidth="3"
+        android:pathData="M35,68 m-12,0 a12,12 0 1,1 24,0 a12,12 0 1,1 -24,0" />
+
+    <!-- Front wheel -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF6B00"
+        android:strokeWidth="3"
+        android:pathData="M73,68 m-12,0 a12,12 0 1,1 24,0 a12,12 0 1,1 -24,0" />
+
+    <!-- Frame - back triangle -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF6B00"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M35,68 L50,45 L35,45 L35,68" />
+
+    <!-- Frame - top tube and down tube -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF6B00"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M50,45 L65,45 L73,68" />
+
+    <!-- Seat post and seat -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF6B00"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M50,45 L50,38" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF6B00"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M45,38 L55,38" />
+
+    <!-- Handlebars -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF6B00"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M65,45 L65,40" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF6B00"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M61,40 L69,40" />
+
+    <!-- Pedal crank -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF6B00"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M35,68 L42,72 M35,68 L28,64" />
+
 </vector>
