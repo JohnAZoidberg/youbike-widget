@@ -12,8 +12,6 @@ import androidx.glance.action.clickable
 import androidx.glance.appwidget.*
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
-import androidx.glance.appwidget.lazy.LazyColumn
-import androidx.glance.appwidget.lazy.items
 import androidx.glance.color.ColorProvider
 import androidx.glance.layout.*
 import androidx.glance.text.*
@@ -73,35 +71,28 @@ class YouBikeWidget : GlanceAppWidget() {
                 } else if (!hasStationData && data.error != null) {
                     ErrorContent(data.error)
                 } else if (hasStationData) {
-                    // Main content area - opens app
-                    Column(
-                        modifier = GlanceModifier
-                            .defaultWeight()
-                            .fillMaxWidth()
-                            .clickable(actionStartActivity<MainActivity>())
-                    ) {
-                        if (!isCompact) {
-                            HeaderRow(context)
-                            Spacer(GlanceModifier.height(4.dp))
-                        }
+                    if (!isCompact) {
+                        HeaderRow(context)
+                        Spacer(GlanceModifier.height(4.dp))
+                    }
 
-                        // Combine all stations and sort by distance
-                        val favoriteIds = data.favoriteStations.map { it.station.sno }.toSet()
-                        val allStations = (data.favoriteStations + data.nearestStations)
-                            .distinctBy { it.station.sno }
-                            .sortedBy { it.distanceMeters.let { d -> if (d < 0) Int.MAX_VALUE else d } }
-                            .take(maxRows)
+                    // Combine all stations and sort by distance
+                    val favoriteIds = data.favoriteStations.map { it.station.sno }.toSet()
+                    val allStations = (data.favoriteStations + data.nearestStations)
+                        .distinctBy { it.station.sno }
+                        .sortedBy { it.distanceMeters.let { d -> if (d < 0) Int.MAX_VALUE else d } }
+                        .take(maxRows)
 
-                        LazyColumn(modifier = GlanceModifier.fillMaxWidth()) {
-                            items(allStations) { station ->
-                                val isFavorite = station.station.sno in favoriteIds
-                                StationRow(
-                                    station,
-                                    isFavorite = isFavorite,
-                                    locale = locale,
-                                    compact = isCompact
-                                )
-                            }
+                    // Station rows - each row opens app
+                    Column(modifier = GlanceModifier.defaultWeight().fillMaxWidth()) {
+                        allStations.forEach { station ->
+                            val isFavorite = station.station.sno in favoriteIds
+                            StationRow(
+                                station,
+                                isFavorite = isFavorite,
+                                locale = locale,
+                                compact = isCompact
+                            )
                         }
                     }
 
@@ -197,7 +188,10 @@ class YouBikeWidget : GlanceAppWidget() {
         }
 
         Row(
-            modifier = GlanceModifier.fillMaxWidth().padding(vertical = if (compact) 1.dp else 2.dp),
+            modifier = GlanceModifier
+                .fillMaxWidth()
+                .padding(vertical = if (compact) 1.dp else 2.dp)
+                .clickable(actionStartActivity<MainActivity>()),
             horizontalAlignment = Alignment.Start
         ) {
             Text(
