@@ -3,6 +3,7 @@ package com.youbike.widget.widget
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -14,12 +15,11 @@ import androidx.glance.appwidget.*
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
-import androidx.glance.color.ColorProvider
-import androidx.glance.layout.*
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
+import androidx.glance.color.ColorProvider
+import androidx.glance.layout.*
 import androidx.glance.text.*
-import android.util.Log
 import com.youbike.widget.R
 import com.youbike.widget.data.StationWithDistance
 import com.youbike.widget.worker.WidgetUpdateWorker
