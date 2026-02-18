@@ -2,6 +2,7 @@ package com.youbike.widget
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -23,26 +24,38 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
-    private var permissionState = mutableStateOf(false)
+    private var foregroundPermissionState = mutableStateOf(false)
+    private var backgroundPermissionState = mutableStateOf(false)
 
-    private val locationPermissionLauncher = registerForActivityResult(
+    private val foregroundLocationLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         val granted = permissions.entries.any { it.value }
-        permissionState.value = granted
+        foregroundPermissionState.value = granted
+        backgroundPermissionState.value = hasBackgroundLocationPermission()
         // Always refresh after permission dialog - we might have location now
+        WidgetUpdateWorker.runOnce(this)
+    }
+
+    private val backgroundLocationLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        backgroundPermissionState.value = granted
         WidgetUpdateWorker.runOnce(this)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        permissionState.value = hasLocationPermission()
+        foregroundPermissionState.value = hasForegroundLocationPermission()
+        backgroundPermissionState.value = hasBackgroundLocationPermission()
 
         setContent {
             MaterialTheme {
                 MainScreen(
-                    hasLocationPermission = permissionState.value,
-                    onRequestPermission = { requestLocationPermission() },
+                    hasForegroundPermission = foregroundPermissionState.value,
+                    hasBackgroundPermission = backgroundPermissionState.value,
+                    onRequestForegroundPermission = { requestForegroundLocationPermission() },
+                    onRequestBackgroundPermission = { requestBackgroundLocationPermission() },
                     onRefresh = { WidgetUpdateWorker.runOnce(this) }
                 )
             }
@@ -51,11 +64,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Re-check permission when returning to app (e.g., from settings)
-        permissionState.value = hasLocationPermission()
+        // Re-check permissions when returning to app (e.g., from settings)
+        foregroundPermissionState.value = hasForegroundLocationPermission()
+        backgroundPermissionState.value = hasBackgroundLocationPermission()
     }
 
-    private fun hasLocationPermission(): Boolean {
+    private fun hasForegroundLocationPermission(): Boolean {
         return ContextCompat.checkSelfPermission(
             this, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED ||
@@ -64,18 +78,41 @@ class MainActivity : ComponentActivity() {
             ) == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun requestLocationPermission() {
-        locationPermissionLauncher.launch(
+    private fun hasBackgroundLocationPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ContextCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            // Background location not needed on older Android versions
+            true
+        }
+    }
+
+    private fun requestForegroundLocationPermission() {
+        foregroundLocationLauncher.launch(
             arrayOf(
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION
             )
         )
     }
+
+    private fun requestBackgroundLocationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            backgroundLocationLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        }
+    }
 }
 
 @Composable
-fun MainScreen(hasLocationPermission: Boolean, onRequestPermission: () -> Unit, onRefresh: () -> Unit) {
+fun MainScreen(
+    hasForegroundPermission: Boolean,
+    hasBackgroundPermission: Boolean,
+    onRequestForegroundPermission: () -> Unit,
+    onRequestBackgroundPermission: () -> Unit,
+    onRefresh: () -> Unit
+) {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -102,7 +139,7 @@ fun MainScreen(hasLocationPermission: Boolean, onRequestPermission: () -> Unit, 
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            if (!hasLocationPermission) {
+            if (!hasForegroundPermission) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -119,8 +156,30 @@ fun MainScreen(hasLocationPermission: Boolean, onRequestPermission: () -> Unit, 
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(12.dp))
-                        Button(onClick = onRequestPermission) {
+                        Button(onClick = onRequestForegroundPermission) {
                             Text(stringResource(R.string.grant_permission))
+                        }
+                    }
+                }
+            } else if (!hasBackgroundPermission) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = stringResource(R.string.background_location_needed),
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(onClick = onRequestBackgroundPermission) {
+                            Text(stringResource(R.string.grant_background_permission))
                         }
                     }
                 }

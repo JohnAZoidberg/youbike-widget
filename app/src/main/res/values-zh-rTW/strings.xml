@@ -17,6 +17,8 @@
     <string name="add_widget_hint">請將小工具加入主畫面</string>
     <string name="location_permission_needed">需要位置權限來顯示最近的站點</string>
     <string name="grant_permission">授權位置權限</string>
+    <string name="background_location_needed">需要背景位置權限才能自動更新小工具。請在設定中選擇「一律允許」。</string>
+    <string name="grant_background_permission">授權背景位置</string>
     <string name="permission_granted">✓ 位置權限已授權</string>
     <string name="refresh_now">立即更新</string>
     <string name="favorite_stations">收藏站點:</string>

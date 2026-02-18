@@ -17,7 +17,9 @@
     <string name="add_widget_hint">Add the widget to your home screen</string>
     <string name="location_permission_needed">Location permission needed to show nearest stations</string>
     <string name="grant_permission">Grant Permission</string>
-    <string name="permission_granted">✓ Location permission granted</string>
+    <string name="background_location_needed">Background location permission needed for automatic widget updates. Select \"Allow all the time\" in settings.</string>
+    <string name="grant_background_permission">Grant Background Access</string>
+    <string name="permission_granted">✓ Location permissions granted</string>
     <string name="refresh_now">Refresh Now</string>
     <string name="favorite_stations">Favorite stations:</string>
 </resources>
