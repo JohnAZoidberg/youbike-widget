@@ -2,6 +2,8 @@
 
 An Android widget that displays real-time YouBike station availability in Taipei.
 
+![Screenshot](screenshot.png)
+
 ## Features
 
 - Shows **2 nearest stations** based on your location
