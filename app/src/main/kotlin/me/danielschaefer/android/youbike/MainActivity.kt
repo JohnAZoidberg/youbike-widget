@@ -1,4 +1,4 @@
-package com.youbike.widget
+package me.danielschaefer.android.youbike
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -17,9 +17,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.youbike.widget.widget.WidgetData
-import com.youbike.widget.widget.YouBikeWidgetDataStore
-import com.youbike.widget.worker.WidgetUpdateWorker
+import me.danielschaefer.android.youbike.widget.WidgetData
+import me.danielschaefer.android.youbike.widget.YouBikeWidgetDataStore
+import me.danielschaefer.android.youbike.worker.WidgetUpdateWorker
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {

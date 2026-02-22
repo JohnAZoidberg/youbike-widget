@@ -69,7 +69,7 @@ Push to the `main` branch or create a tag starting with `v` (e.g., `v1.0.0`) to 
 
 ### Favorite Stations
 
-Edit `app/src/main/kotlin/com/youbike/widget/Config.kt`:
+Edit `app/src/main/kotlin/me/danielschaefer/android/youbike/Config.kt`:
 
 ```kotlin
 val FAVORITE_STATION_IDS = listOf(

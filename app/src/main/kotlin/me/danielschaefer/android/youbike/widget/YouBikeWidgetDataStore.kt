@@ -1,11 +1,11 @@
-package com.youbike.widget.widget
+package me.danielschaefer.android.youbike.widget
 
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
-import com.youbike.widget.data.Station
-import com.youbike.widget.data.StationWithDistance
+import me.danielschaefer.android.youbike.data.Station
+import me.danielschaefer.android.youbike.data.StationWithDistance
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json

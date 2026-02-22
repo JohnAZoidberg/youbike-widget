@@ -1,4 +1,4 @@
-package com.youbike.widget.worker
+package me.danielschaefer.android.youbike.worker
 
 import android.Manifest
 import android.content.Context
@@ -10,12 +10,12 @@ import androidx.work.*
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
-import com.youbike.widget.Config
-import com.youbike.widget.R
-import com.youbike.widget.data.YouBikeRepository
-import com.youbike.widget.widget.WidgetData
-import com.youbike.widget.widget.YouBikeWidget
-import com.youbike.widget.widget.YouBikeWidgetDataStore
+import me.danielschaefer.android.youbike.Config
+import me.danielschaefer.android.youbike.R
+import me.danielschaefer.android.youbike.data.YouBikeRepository
+import me.danielschaefer.android.youbike.widget.WidgetData
+import me.danielschaefer.android.youbike.widget.YouBikeWidget
+import me.danielschaefer.android.youbike.widget.YouBikeWidgetDataStore
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit

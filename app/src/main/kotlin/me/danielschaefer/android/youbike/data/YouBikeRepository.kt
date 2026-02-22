@@ -1,7 +1,7 @@
-package com.youbike.widget.data
+package me.danielschaefer.android.youbike.data
 
 import android.location.Location
-import com.youbike.widget.Config
+import me.danielschaefer.android.youbike.Config
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.android.*

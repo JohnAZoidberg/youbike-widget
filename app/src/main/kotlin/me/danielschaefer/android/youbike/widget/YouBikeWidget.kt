@@ -1,4 +1,4 @@
-package com.youbike.widget.widget
+package me.danielschaefer.android.youbike.widget
 
 import android.content.Context
 import android.content.Intent
@@ -20,9 +20,9 @@ import androidx.glance.appwidget.lazy.items
 import androidx.glance.color.ColorProvider
 import androidx.glance.layout.*
 import androidx.glance.text.*
-import com.youbike.widget.R
-import com.youbike.widget.data.StationWithDistance
-import com.youbike.widget.worker.WidgetUpdateWorker
+import me.danielschaefer.android.youbike.R
+import me.danielschaefer.android.youbike.data.StationWithDistance
+import me.danielschaefer.android.youbike.worker.WidgetUpdateWorker
 import java.util.Locale
 
 data class WidgetData(

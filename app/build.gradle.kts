@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.youbike.widget"
+    namespace = "me.danielschaefer.android.youbike"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.youbike.widget"
+        applicationId = "me.danielschaefer.android.youbike"
         minSdk = 35
         targetSdk = 35
         versionCode = 1

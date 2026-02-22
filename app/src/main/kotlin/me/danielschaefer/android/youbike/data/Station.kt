@@ -1,4 +1,4 @@
-package com.youbike.widget.data
+package me.danielschaefer.android.youbike.data
 
 import java.util.Locale
 import kotlinx.serialization.SerialName

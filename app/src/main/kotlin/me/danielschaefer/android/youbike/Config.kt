@@ -1,4 +1,4 @@
-package com.youbike.widget
+package me.danielschaefer.android.youbike
 
 object Config {
     const val API_URL = "https://tcgbusfs.blob.core.windows.net/dotapp/youbike/v2/youbike_immediate.json"

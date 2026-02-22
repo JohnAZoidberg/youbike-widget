@@ -14,10 +14,10 @@
 -keepclasseswithmembers class kotlinx.serialization.json.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
--keep,includedescriptorclasses class com.youbike.widget.**$$serializer { *; }
--keepclassmembers class com.youbike.widget.** {
+-keep,includedescriptorclasses class me.danielschaefer.android.youbike.**$$serializer { *; }
+-keepclassmembers class me.danielschaefer.android.youbike.** {
     *** Companion;
 }
--keepclasseswithmembers class com.youbike.widget.** {
+-keepclasseswithmembers class me.danielschaefer.android.youbike.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
