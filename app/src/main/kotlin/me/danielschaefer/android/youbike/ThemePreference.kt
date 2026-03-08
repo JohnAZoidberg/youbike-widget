@@ -1,7 +1,9 @@
 package me.danielschaefer.android.youbike
 
 import android.content.Context
+import android.content.res.Configuration
 import androidx.appcompat.app.AppCompatDelegate
+import me.danielschaefer.android.youbike.worker.WidgetUpdateWorker
 
 enum class ThemeMode(val nightMode: Int) {
     System(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM),
@@ -19,6 +21,7 @@ object ThemePreference {
             .putString(KEY_THEME, mode.name)
             .apply()
         AppCompatDelegate.setDefaultNightMode(mode.nightMode)
+        WidgetUpdateWorker.runOnce(context)
     }
 
     fun load(context: Context): ThemeMode {
@@ -29,5 +32,16 @@ object ThemePreference {
 
     fun apply(context: Context) {
         AppCompatDelegate.setDefaultNightMode(load(context).nightMode)
+    }
+
+    fun isDark(context: Context): Boolean {
+        return when (load(context)) {
+            ThemeMode.Dark -> true
+            ThemeMode.Light -> false
+            ThemeMode.System -> {
+                val uiMode = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+                uiMode == Configuration.UI_MODE_NIGHT_YES
+            }
+        }
     }
 }

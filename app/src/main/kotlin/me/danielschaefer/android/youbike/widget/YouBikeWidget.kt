@@ -21,6 +21,7 @@ import androidx.glance.color.ColorProvider
 import androidx.glance.layout.*
 import androidx.glance.text.*
 import me.danielschaefer.android.youbike.R
+import me.danielschaefer.android.youbike.ThemePreference
 import me.danielschaefer.android.youbike.data.StationWithDistance
 import me.danielschaefer.android.youbike.worker.WidgetUpdateWorker
 import java.util.Locale
@@ -34,6 +35,8 @@ data class WidgetData(
     val error: String? = null
 )
 
+private fun colorProvider(color: Color) = ColorProvider(color, color)
+
 class YouBikeWidget : GlanceAppWidget() {
 
     // Use Exact mode - renders for exact sizes provided by launcher
@@ -41,14 +44,15 @@ class YouBikeWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val data = YouBikeWidgetDataStore.getData(context)
+        val isDark = ThemePreference.isDark(context)
 
         provideContent {
-            WidgetContent(data)
+            WidgetContent(data, isDark)
         }
     }
 
     @Composable
-    private fun WidgetContent(data: WidgetData?) {
+    private fun WidgetContent(data: WidgetData?, isDark: Boolean) {
         val context = LocalContext.current
         val locale = context.resources.configuration.locales[0]
         val size = LocalSize.current
@@ -62,19 +66,19 @@ class YouBikeWidget : GlanceAppWidget() {
             Column(
                 modifier = GlanceModifier
                     .fillMaxSize()
-                    .background(ColorProvider(Color.White, Color(0xFF1E1E1E)))
+                    .background(if (isDark) Color(0xFF1E1E1E) else Color.White)
                     .padding(if (isCompact) 8.dp else 12.dp)
             ) {
                 val hasStationData = data != null &&
                     (data.nearestStations.isNotEmpty() || data.favoriteStations.isNotEmpty())
 
                 if (data == null) {
-                    LoadingContent(context)
+                    LoadingContent(context, isDark)
                 } else if (!hasStationData && data.error != null) {
-                    ErrorContent(data.error)
+                    ErrorContent(data.error, isDark)
                 } else if (hasStationData) {
                     // Always show header
-                    HeaderRow(context)
+                    HeaderRow(context, isDark)
 
                     // Combine all stations and sort by distance
                     val favoriteIds = data.favoriteStations.map { it.station.sno }.toSet()
@@ -90,19 +94,20 @@ class YouBikeWidget : GlanceAppWidget() {
                                 station,
                                 isFavorite = isFavorite,
                                 locale = locale,
-                                compact = false
+                                compact = false,
+                                isDark = isDark
                             )
                         }
                     }
                 } else {
-                    LoadingContent(context)
+                    LoadingContent(context, isDark)
                 }
             }
         }
     }
 
     @Composable
-    private fun LoadingContent(context: Context) {
+    private fun LoadingContent(context: Context, isDark: Boolean) {
         Box(
             modifier = GlanceModifier
                 .fillMaxSize()
@@ -112,7 +117,7 @@ class YouBikeWidget : GlanceAppWidget() {
             Text(
                 text = context.getString(R.string.loading),
                 style = TextStyle(
-                    color = ColorProvider(Color(0xFF666666), Color(0xFFAAAAAA)),
+                    color = colorProvider(if (isDark) Color(0xFFAAAAAA) else Color(0xFF666666)),
                     fontSize = 14.sp
                 )
             )
@@ -120,7 +125,7 @@ class YouBikeWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun ErrorContent(error: String) {
+    private fun ErrorContent(error: String, isDark: Boolean) {
         Box(
             modifier = GlanceModifier
                 .fillMaxSize()
@@ -130,7 +135,7 @@ class YouBikeWidget : GlanceAppWidget() {
             Text(
                 text = error,
                 style = TextStyle(
-                    color = ColorProvider(Color(0xFFCC0000), Color(0xFFFF6666)),
+                    color = colorProvider(if (isDark) Color(0xFFFF6666) else Color(0xFFCC0000)),
                     fontSize = 12.sp
                 )
             )
@@ -138,7 +143,7 @@ class YouBikeWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun HeaderRow(context: Context) {
+    private fun HeaderRow(context: Context, isDark: Boolean) {
         Row(
             modifier = GlanceModifier.fillMaxWidth(),
             horizontalAlignment = Alignment.Start
@@ -146,28 +151,28 @@ class YouBikeWidget : GlanceAppWidget() {
             Text(
                 text = context.getString(R.string.header_station),
                 modifier = GlanceModifier.defaultWeight(),
-                style = headerStyle()
+                style = headerStyle(isDark)
             )
             // Direction arrow column (no header text needed)
             Text(
                 text = "",
                 modifier = GlanceModifier.width(20.dp),
-                style = headerStyle()
+                style = headerStyle(isDark)
             )
             Text(
                 text = context.getString(R.string.header_distance),
                 modifier = GlanceModifier.width(56.dp),
-                style = headerStyle()
+                style = headerStyle(isDark)
             )
             Text(
                 text = context.getString(R.string.header_spots),
                 modifier = GlanceModifier.width(40.dp),
-                style = headerStyle()
+                style = headerStyle(isDark)
             )
             Text(
                 text = context.getString(R.string.header_bikes),
                 modifier = GlanceModifier.width(40.dp),
-                style = headerStyle()
+                style = headerStyle(isDark)
             )
         }
     }
@@ -177,17 +182,18 @@ class YouBikeWidget : GlanceAppWidget() {
         station: StationWithDistance,
         isFavorite: Boolean,
         locale: Locale,
-        compact: Boolean = false
+        compact: Boolean = false,
+        isDark: Boolean = false
     ) {
         val spotsColor = when {
-            station.station.availableReturnBikes == 0 -> ColorProvider(Color(0xFFCC0000), Color(0xFFFF6666))
-            station.station.availableReturnBikes <= 3 -> ColorProvider(Color(0xFFFF8800), Color(0xFFFFAA44))
-            else -> ColorProvider(Color(0xFF008800), Color(0xFF66CC66))
+            station.station.availableReturnBikes == 0 -> colorProvider(if (isDark) Color(0xFFFF6666) else Color(0xFFCC0000))
+            station.station.availableReturnBikes <= 3 -> colorProvider(if (isDark) Color(0xFFFFAA44) else Color(0xFFFF8800))
+            else -> colorProvider(if (isDark) Color(0xFF66CC66) else Color(0xFF008800))
         }
         val bikesColor = when {
-            station.station.availableRentBikes == 0 -> ColorProvider(Color(0xFFCC0000), Color(0xFFFF6666))
-            station.station.availableRentBikes <= 3 -> ColorProvider(Color(0xFFFF8800), Color(0xFFFFAA44))
-            else -> ColorProvider(Color(0xFF008800), Color(0xFF66CC66))
+            station.station.availableRentBikes == 0 -> colorProvider(if (isDark) Color(0xFFFF6666) else Color(0xFFCC0000))
+            station.station.availableRentBikes <= 3 -> colorProvider(if (isDark) Color(0xFFFFAA44) else Color(0xFFFF8800))
+            else -> colorProvider(if (isDark) Color(0xFF66CC66) else Color(0xFF008800))
         }
 
         val lat = station.station.latitude
@@ -206,18 +212,18 @@ class YouBikeWidget : GlanceAppWidget() {
             Text(
                 text = (if (isFavorite) "⭐ " else "") + station.station.getDisplayName(locale),
                 modifier = GlanceModifier.defaultWeight(),
-                style = if (compact) compactCellStyle() else cellStyle(),
+                style = if (compact) compactCellStyle(isDark) else cellStyle(isDark),
                 maxLines = 1
             )
             Text(
                 text = station.directionArrow,
                 modifier = GlanceModifier.width(20.dp),
-                style = if (compact) compactCellStyle() else cellStyle()
+                style = if (compact) compactCellStyle(isDark) else cellStyle(isDark)
             )
             Text(
                 text = if (station.distanceMeters >= 0) station.formattedDistance else "-",
                 modifier = GlanceModifier.width(if (compact) 48.dp else 56.dp),
-                style = if (compact) compactCellStyle() else cellStyle()
+                style = if (compact) compactCellStyle(isDark) else cellStyle(isDark)
             )
             Text(
                 text = station.station.availableReturnBikes.toString(),
@@ -241,7 +247,7 @@ class YouBikeWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun FooterRow(context: Context, timestamp: String, error: String?) {
+    private fun FooterRow(context: Context, timestamp: String, error: String?, isDark: Boolean) {
         Row(
             modifier = GlanceModifier
                 .fillMaxWidth()
@@ -251,7 +257,7 @@ class YouBikeWidget : GlanceAppWidget() {
             Text(
                 text = "🔄 ",
                 style = TextStyle(
-                    color = ColorProvider(Color(0xFF999999), Color(0xFF666666)),
+                    color = colorProvider(if (isDark) Color(0xFF666666) else Color(0xFF999999)),
                     fontSize = 10.sp
                 )
             )
@@ -259,7 +265,7 @@ class YouBikeWidget : GlanceAppWidget() {
                 Text(
                     text = "⚠ ",
                     style = TextStyle(
-                        color = ColorProvider(Color(0xFFCC0000), Color(0xFFFF6666)),
+                        color = colorProvider(if (isDark) Color(0xFFFF6666) else Color(0xFFCC0000)),
                         fontSize = 10.sp
                     )
                 )
@@ -268,9 +274,9 @@ class YouBikeWidget : GlanceAppWidget() {
                 text = context.getString(R.string.update_time, timestamp),
                 style = TextStyle(
                     color = if (error != null) {
-                        ColorProvider(Color(0xFFCC0000), Color(0xFFFF6666))
+                        colorProvider(if (isDark) Color(0xFFFF6666) else Color(0xFFCC0000))
                     } else {
-                        ColorProvider(Color(0xFF999999), Color(0xFF666666))
+                        colorProvider(if (isDark) Color(0xFF666666) else Color(0xFF999999))
                     },
                     fontSize = 10.sp
                 )
@@ -278,19 +284,19 @@ class YouBikeWidget : GlanceAppWidget() {
         }
     }
 
-    private fun headerStyle() = TextStyle(
-        color = ColorProvider(Color(0xFF333333), Color(0xFFCCCCCC)),
+    private fun headerStyle(isDark: Boolean) = TextStyle(
+        color = colorProvider(if (isDark) Color(0xFFCCCCCC) else Color(0xFF333333)),
         fontSize = 11.sp,
         fontWeight = FontWeight.Bold
     )
 
-    private fun cellStyle() = TextStyle(
-        color = ColorProvider(Color(0xFF444444), Color(0xFFBBBBBB)),
+    private fun cellStyle(isDark: Boolean) = TextStyle(
+        color = colorProvider(if (isDark) Color(0xFFBBBBBB) else Color(0xFF444444)),
         fontSize = 12.sp
     )
 
-    private fun compactCellStyle() = TextStyle(
-        color = ColorProvider(Color(0xFF444444), Color(0xFFBBBBBB)),
+    private fun compactCellStyle(isDark: Boolean) = TextStyle(
+        color = colorProvider(if (isDark) Color(0xFFBBBBBB) else Color(0xFF444444)),
         fontSize = 11.sp
     )
 }
