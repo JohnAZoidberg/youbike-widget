@@ -20,10 +20,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.launch
 import me.danielschaefer.android.youbike.widget.WidgetData
 import me.danielschaefer.android.youbike.widget.YouBikeWidgetDataStore
 import me.danielschaefer.android.youbike.worker.WidgetUpdateWorker
-import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 

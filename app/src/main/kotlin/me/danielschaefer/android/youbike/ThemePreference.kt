@@ -8,7 +8,7 @@ import me.danielschaefer.android.youbike.worker.WidgetUpdateWorker
 enum class ThemeMode(val nightMode: Int) {
     System(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM),
     Light(AppCompatDelegate.MODE_NIGHT_NO),
-    Dark(AppCompatDelegate.MODE_NIGHT_YES);
+    Dark(AppCompatDelegate.MODE_NIGHT_YES)
 }
 
 object ThemePreference {

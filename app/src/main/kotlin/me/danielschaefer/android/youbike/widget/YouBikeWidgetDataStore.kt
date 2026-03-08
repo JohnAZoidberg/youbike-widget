@@ -4,11 +4,11 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
-import me.danielschaefer.android.youbike.data.Station
-import me.danielschaefer.android.youbike.data.StationWithDistance
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import me.danielschaefer.android.youbike.data.Station
+import me.danielschaefer.android.youbike.data.StationWithDistance
 
 private val Context.widgetDataStore: DataStore<Preferences> by preferencesDataStore(name = "widget_data")
 

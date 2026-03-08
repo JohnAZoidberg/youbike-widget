@@ -20,11 +20,11 @@ import androidx.glance.appwidget.lazy.items
 import androidx.glance.color.ColorProvider
 import androidx.glance.layout.*
 import androidx.glance.text.*
+import java.util.Locale
 import me.danielschaefer.android.youbike.R
 import me.danielschaefer.android.youbike.ThemePreference
 import me.danielschaefer.android.youbike.data.StationWithDistance
 import me.danielschaefer.android.youbike.worker.WidgetUpdateWorker
-import java.util.Locale
 
 data class WidgetData(
     val nearestStations: List<StationWithDistance>,
@@ -185,16 +185,19 @@ class YouBikeWidget : GlanceAppWidget() {
         compact: Boolean = false,
         isDark: Boolean = false
     ) {
-        val spotsColor = when {
-            station.station.availableReturnBikes == 0 -> colorProvider(if (isDark) Color(0xFFFF6666) else Color(0xFFCC0000))
-            station.station.availableReturnBikes <= 3 -> colorProvider(if (isDark) Color(0xFFFFAA44) else Color(0xFFFF8800))
-            else -> colorProvider(if (isDark) Color(0xFF66CC66) else Color(0xFF008800))
+        fun statusColor(count: Int) = when {
+            count == 0 -> colorProvider(
+                if (isDark) Color(0xFFFF6666) else Color(0xFFCC0000)
+            )
+            count <= 3 -> colorProvider(
+                if (isDark) Color(0xFFFFAA44) else Color(0xFFFF8800)
+            )
+            else -> colorProvider(
+                if (isDark) Color(0xFF66CC66) else Color(0xFF008800)
+            )
         }
-        val bikesColor = when {
-            station.station.availableRentBikes == 0 -> colorProvider(if (isDark) Color(0xFFFF6666) else Color(0xFFCC0000))
-            station.station.availableRentBikes <= 3 -> colorProvider(if (isDark) Color(0xFFFFAA44) else Color(0xFFFF8800))
-            else -> colorProvider(if (isDark) Color(0xFF66CC66) else Color(0xFF008800))
-        }
+        val spotsColor = statusColor(station.station.availableReturnBikes)
+        val bikesColor = statusColor(station.station.availableRentBikes)
 
         val lat = station.station.latitude
         val lon = station.station.longitude

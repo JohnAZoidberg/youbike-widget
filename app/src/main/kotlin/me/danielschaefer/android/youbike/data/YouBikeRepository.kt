@@ -1,7 +1,6 @@
 package me.danielschaefer.android.youbike.data
 
 import android.location.Location
-import me.danielschaefer.android.youbike.Config
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.android.*
@@ -11,6 +10,7 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlin.math.*
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
+import me.danielschaefer.android.youbike.Config
 
 class YouBikeRepository {
     private val client = HttpClient(Android) {

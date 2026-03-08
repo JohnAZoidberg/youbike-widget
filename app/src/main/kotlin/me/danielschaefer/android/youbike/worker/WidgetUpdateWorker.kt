@@ -10,16 +10,16 @@ import androidx.work.*
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
+import java.text.SimpleDateFormat
+import java.util.*
+import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.tasks.await
 import me.danielschaefer.android.youbike.Config
 import me.danielschaefer.android.youbike.R
 import me.danielschaefer.android.youbike.data.YouBikeRepository
 import me.danielschaefer.android.youbike.widget.WidgetData
 import me.danielschaefer.android.youbike.widget.YouBikeWidget
 import me.danielschaefer.android.youbike.widget.YouBikeWidgetDataStore
-import java.text.SimpleDateFormat
-import java.util.*
-import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.tasks.await
 
 class WidgetUpdateWorker(
     private val context: Context,
