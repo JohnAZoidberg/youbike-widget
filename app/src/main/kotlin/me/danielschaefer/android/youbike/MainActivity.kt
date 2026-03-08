@@ -4,11 +4,14 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,7 +25,7 @@ import me.danielschaefer.android.youbike.widget.YouBikeWidgetDataStore
 import me.danielschaefer.android.youbike.worker.WidgetUpdateWorker
 import kotlinx.coroutines.launch
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     private var foregroundPermissionState = mutableStateOf(false)
     private var backgroundPermissionState = mutableStateOf(false)
@@ -50,7 +53,9 @@ class MainActivity : ComponentActivity() {
         backgroundPermissionState.value = hasBackgroundLocationPermission()
 
         setContent {
-            MaterialTheme {
+            val darkTheme = isSystemInDarkTheme()
+            val colorScheme = if (darkTheme) dynamicDarkColorScheme(this) else dynamicLightColorScheme(this)
+            MaterialTheme(colorScheme = colorScheme) {
                 MainScreen(
                     hasForegroundPermission = foregroundPermissionState.value,
                     hasBackgroundPermission = backgroundPermissionState.value,
@@ -105,6 +110,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     hasForegroundPermission: Boolean,
@@ -113,6 +119,8 @@ fun MainScreen(
     onRequestBackgroundPermission: () -> Unit,
     onRefresh: () -> Unit
 ) {
+    val context = LocalContext.current
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -128,6 +136,39 @@ fun MainScreen(
                 text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.headlineLarge
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Theme selector
+            Text(
+                text = stringResource(R.string.theme),
+                style = MaterialTheme.typography.labelLarge
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            val themeModes = ThemeMode.entries
+            val themeLabels = listOf(
+                stringResource(R.string.theme_system),
+                stringResource(R.string.theme_light),
+                stringResource(R.string.theme_dark)
+            )
+            var selectedTheme by remember { mutableStateOf(ThemePreference.load(context)) }
+            SingleChoiceSegmentedButtonRow {
+                themeModes.forEachIndexed { index, mode ->
+                    SegmentedButton(
+                        selected = selectedTheme == mode,
+                        onClick = {
+                            selectedTheme = mode
+                            ThemePreference.save(context, mode)
+                        },
+                        shape = SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = themeModes.size
+                        )
+                    ) {
+                        Text(themeLabels[index])
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -193,7 +234,6 @@ fun MainScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            val context = LocalContext.current
             val scope = rememberCoroutineScope()
             var widgetData by remember { mutableStateOf<WidgetData?>(null) }
 

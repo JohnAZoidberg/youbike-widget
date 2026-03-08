@@ -22,4 +22,10 @@
     <string name="permission_granted">✓ 位置權限已授權</string>
     <string name="refresh_now">立即更新</string>
     <string name="favorite_stations">收藏站點:</string>
+
+    <!-- Theme -->
+    <string name="theme">主題</string>
+    <string name="theme_system">系統</string>
+    <string name="theme_light">淺色</string>
+    <string name="theme_dark">深色</string>
 </resources>

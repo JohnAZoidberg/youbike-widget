@@ -22,4 +22,10 @@
     <string name="permission_granted">✓ Location permissions granted</string>
     <string name="refresh_now">Refresh Now</string>
     <string name="favorite_stations">Favorite stations:</string>
+
+    <!-- Theme -->
+    <string name="theme">Theme</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
 </resources>
