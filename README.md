@@ -122,6 +122,15 @@ nix develop --command adb install -r app/build/outputs/apk/debug/app-debug.apk
 2. Long-press on your home screen → Widgets → **YouBike 站點**
 3. Add the widget to your home screen
 
+## Debugging
+
+Debug builds include a receiver that triggers a widget update from adb (works while the phone is locked):
+
+```bash
+adb shell am broadcast -a me.danielschaefer.android.youbike.DEBUG_REFRESH -p me.danielschaefer.android.youbike
+adb logcat -s YouBikeWorker YouBikeWidget
+```
+
 ## Data Source
 
 Station data is fetched from the official open data APIs of Taipei City and New Taipei City:

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Debug-only test hook: adb shell am broadcast -a me.danielschaefer.android.youbike.DEBUG_REFRESH -p me.danielschaefer.android.youbike -->
+        <receiver
+            android:name=".DebugRefreshReceiver"
+            android:exported="true"
+            android:permission="android.permission.DUMP">
+            <intent-filter>
+                <action android:name="me.danielschaefer.android.youbike.DEBUG_REFRESH" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>
