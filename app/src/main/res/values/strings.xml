@@ -14,6 +14,8 @@
     <string name="update_failed">Update failed: %s</string>
     <string name="source_taipei">Taipei</string>
     <string name="source_new_taipei">New Taipei</string>
+    <string name="no_stations_nearby">No stations within %s</string>
+    <string name="location_unavailable">Location unavailable</string>
 
     <!-- Main Activity -->
     <string name="add_widget_hint">Add the widget to your home screen</string>

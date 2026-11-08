@@ -27,9 +27,11 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
 import java.util.concurrent.TimeUnit
+import me.danielschaefer.android.youbike.Config
 import me.danielschaefer.android.youbike.R
 import me.danielschaefer.android.youbike.ThemePreference
 import me.danielschaefer.android.youbike.data.StationWithDistance
+import me.danielschaefer.android.youbike.data.formatDistance
 import me.danielschaefer.android.youbike.worker.WidgetUpdateWorker
 
 data class WidgetData(
@@ -105,31 +107,55 @@ class YouBikeWidget : GlanceAppWidget() {
                     LoadingContent(context, isDark)
                 } else if (!hasStationData && data.error != null) {
                     ErrorContent(data.error, isDark)
-                } else if (hasStationData) {
-                    // Always show header
-                    HeaderRow(context, isDark)
-
-                    // Combine all stations and sort by distance
-                    val favoriteIds = data.favoriteStations.map { it.station.sno }.toSet()
-                    val allStations = (data.favoriteStations + data.nearestStations)
-                        .distinctBy { it.station.sno }
-                        .sortedBy { it.distanceMeters.let { d -> if (d < 0) Int.MAX_VALUE else d } }
-
+                } else {
                     val dataMillis = data.apiUpdateMillis
                     val isStale = dataMillis != null &&
                         System.currentTimeMillis() - dataMillis > STALE_AFTER_MILLIS
 
-                    // Use LazyColumn to fill the space between header and footer
-                    LazyColumn(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
-                        items(allStations) { station ->
-                            val isFavorite = station.station.sno in favoriteIds
-                            StationRow(
-                                station,
-                                isFavorite = isFavorite,
-                                locale = locale,
-                                compact = false,
-                                isDark = isDark
-                            )
+                    // Location is known, but no station is within MAX_NEAREST_DISTANCE_METERS
+                    val nothingNearby = data.hasLocation && data.nearestStations.isEmpty()
+                    val nothingNearbyText = context.getString(
+                        R.string.no_stations_nearby,
+                        formatDistance(Config.MAX_NEAREST_DISTANCE_METERS)
+                    )
+
+                    if (hasStationData) {
+                        HeaderRow(context, isDark)
+
+                        // Combine all stations and sort by distance
+                        val favoriteIds = data.favoriteStations.map { it.station.sno }.toSet()
+                        val allStations = (data.favoriteStations + data.nearestStations)
+                            .distinctBy { it.station.sno }
+                            .sortedBy { it.distanceMeters.let { d -> if (d < 0) Int.MAX_VALUE else d } }
+
+                        // Use LazyColumn to fill the space between header and footer
+                        LazyColumn(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
+                            if (nothingNearby) {
+                                item { NoticeRow(nothingNearbyText, isDark) }
+                            }
+                            items(allStations) { station ->
+                                val isFavorite = station.station.sno in favoriteIds
+                                StationRow(
+                                    station,
+                                    isFavorite = isFavorite,
+                                    locale = locale,
+                                    compact = false,
+                                    isDark = isDark
+                                )
+                            }
+                        }
+                    } else {
+                        // Nothing to list: explain why instead of showing "Loading…" forever
+                        Box(
+                            modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val notice = if (nothingNearby) {
+                                nothingNearbyText
+                            } else {
+                                context.getString(R.string.location_unavailable)
+                            }
+                            NoticeRow(notice, isDark)
                         }
                     }
 
@@ -138,8 +164,6 @@ class YouBikeWidget : GlanceAppWidget() {
                         val timestamp = dataMillis?.let { formatTimestamp(it) } ?: data.lastUpdated
                         FooterRow(context, timestamp, data.error, isStale, isDark)
                     }
-                } else {
-                    LoadingContent(context, isDark)
                 }
             }
         }
@@ -286,6 +310,20 @@ class YouBikeWidget : GlanceAppWidget() {
                 )
             )
         }
+    }
+
+    @Composable
+    private fun NoticeRow(text: String, isDark: Boolean) {
+        Text(
+            text = text,
+            modifier = GlanceModifier.fillMaxWidth().padding(vertical = 2.dp),
+            style = TextStyle(
+                color = colorProvider(if (isDark) Color(0xFFAAAAAA) else Color(0xFF666666)),
+                fontSize = 11.sp,
+                fontStyle = FontStyle.Italic
+            ),
+            maxLines = 1
+        )
     }
 
     @Composable

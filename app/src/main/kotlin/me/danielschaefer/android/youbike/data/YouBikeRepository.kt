@@ -131,6 +131,7 @@ class YouBikeRepository {
         allStations: List<Station>,
         location: Location,
         count: Int = Config.MAX_NEAREST_STATIONS,
+        maxDistanceMeters: Int = Config.MAX_NEAREST_DISTANCE_METERS,
         excludeIds: Set<String> = emptySet()
     ): List<StationWithDistance> {
         return allStations
@@ -150,6 +151,7 @@ class YouBikeRepository {
                 )
                 StationWithDistance(station, distance, bearing)
             }
+            .filter { it.distanceMeters <= maxDistanceMeters }
             .sortedBy { it.distanceMeters }
             .take(count)
     }

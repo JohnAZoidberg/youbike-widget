@@ -74,16 +74,18 @@ data class NewTaipeiStation(
     }
 }
 
+fun formatDistance(meters: Int): String = when {
+    meters < 1000 -> "$meters m"
+    else -> String.format("%.1f km", meters / 1000.0)
+}
+
 data class StationWithDistance(
     val station: Station,
     val distanceMeters: Int,
     val bearingDegrees: Float = 0f
 ) {
     val formattedDistance: String
-        get() = when {
-            distanceMeters < 1000 -> "$distanceMeters m"
-            else -> String.format("%.1f km", distanceMeters / 1000.0)
-        }
+        get() = formatDistance(distanceMeters)
 
     // Returns arrow character pointing in the direction of the station
     val directionArrow: String

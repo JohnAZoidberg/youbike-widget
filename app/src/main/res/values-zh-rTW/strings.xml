@@ -14,6 +14,8 @@
     <string name="update_failed">更新失敗: %s</string>
     <string name="source_taipei">臺北市</string>
     <string name="source_new_taipei">新北市</string>
+    <string name="no_stations_nearby">%s 內沒有站點</string>
+    <string name="location_unavailable">無法取得位置</string>
 
     <!-- Main Activity -->
     <string name="add_widget_hint">請將小工具加入主畫面</string>
