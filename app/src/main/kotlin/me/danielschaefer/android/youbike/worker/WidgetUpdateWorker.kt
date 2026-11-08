@@ -21,10 +21,17 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeoutOrNull
 import me.danielschaefer.android.youbike.Config
 import me.danielschaefer.android.youbike.R
+import me.danielschaefer.android.youbike.data.StationSource
 import me.danielschaefer.android.youbike.data.YouBikeRepository
 import me.danielschaefer.android.youbike.widget.WidgetData
 import me.danielschaefer.android.youbike.widget.YouBikeWidget
 import me.danielschaefer.android.youbike.widget.YouBikeWidgetDataStore
+
+private val StationSource.nameRes: Int
+    get() = when (this) {
+        StationSource.TAIPEI -> R.string.source_taipei
+        StationSource.NEW_TAIPEI -> R.string.source_new_taipei
+    }
 
 class WidgetUpdateWorker(
     private val context: Context,
@@ -37,7 +44,8 @@ class WidgetUpdateWorker(
     override suspend fun doWork(): Result {
         Log.d(TAG, "Update started (attempt $runAttemptCount, tags=$tags)")
         return try {
-            val stations = repository.fetchStations()
+            val fetchResult = repository.fetchStations()
+            val stations = fetchResult.stations
             val locationStart = SystemClock.elapsedRealtime()
             val location = getLocation()
             val locationMillis = SystemClock.elapsedRealtime() - locationStart
@@ -61,15 +69,21 @@ class WidgetUpdateWorker(
             }
 
             val timestamp = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
-            // Same "yyyy-MM-dd HH:mm:ss" format for all stations, so string max is the newest
-            val apiUpdateTime = stations.maxOfOrNull { it.updateTime }
+            val apiUpdateTime = fetchResult.updateTime
+            // If one source failed, show the other's stations but flag the update as incomplete
+            val partialError = fetchResult.failedSources.takeIf { it.isNotEmpty() }?.let { failed ->
+                val names = failed.joinToString { context.getString(it.nameRes) }
+                Log.w(TAG, "Fetching stations failed for: $failed")
+                context.getString(R.string.update_failed, names)
+            }
 
             val widgetData = WidgetData(
                 nearestStations = nearest,
                 favoriteStations = favoritesWithDistance,
                 lastUpdated = timestamp,
                 apiUpdateTime = apiUpdateTime,
-                hasLocation = location != null
+                hasLocation = location != null,
+                error = partialError
             )
 
             YouBikeWidgetDataStore.saveData(context, widgetData)

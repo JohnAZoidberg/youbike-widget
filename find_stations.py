@@ -6,7 +6,17 @@ import sys
 
 def load_stations():
     with open("sample_data.json", "r", encoding="utf-8") as f:
-        return json.load(f)
+        stations = json.load(f)
+    # New Taipei stations are optional and use different field names
+    try:
+        with open("sample_data_ntpc.json", "r", encoding="utf-8") as f:
+            for s in json.load(f):
+                s["available_rent_bikes"] = s["sbi_quantity"]
+                s["available_return_bikes"] = s["bemp"]
+                stations.append(s)
+    except FileNotFoundError:
+        pass
+    return stations
 
 def search_stations(stations, query):
     """Search stations by name (Chinese or English) or area."""

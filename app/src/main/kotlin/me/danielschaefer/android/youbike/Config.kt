@@ -1,7 +1,12 @@
 package me.danielschaefer.android.youbike
 
 object Config {
-    const val API_URL = "https://tcgbusfs.blob.core.windows.net/dotapp/youbike/v2/youbike_immediate.json"
+    // Taipei City stations
+    const val TAIPEI_API_URL = "https://tcgbusfs.blob.core.windows.net/dotapp/youbike/v2/youbike_immediate.json"
+
+    // New Taipei City stations (paginated with ?page=N&size=M)
+    const val NEW_TAIPEI_API_URL =
+        "https://data.ntpc.gov.tw/api/datasets/010e5b15-3823-4b20-b401-b1cf000550c5/json"
 
     val FAVORITE_STATION_IDS = listOf(
         // 捷運古亭站(3號出口)

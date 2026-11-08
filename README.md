@@ -1,6 +1,6 @@
 # YouBike Widget
 
-An Android widget that displays real-time YouBike station availability in Taipei.
+An Android widget that displays real-time YouBike station availability in Taipei and New Taipei.
 
 ![Screenshot](screenshot.png)
 
@@ -84,8 +84,9 @@ val FAVORITE_STATION_IDS = listOf(
 Use the included helper script:
 
 ```bash
-# Download fresh data
+# Download fresh data (Taipei, and optionally New Taipei)
 curl -s "https://tcgbusfs.blob.core.windows.net/dotapp/youbike/v2/youbike_immediate.json" -o sample_data.json
+curl -s "https://data.ntpc.gov.tw/api/datasets/010e5b15-3823-4b20-b401-b1cf000550c5/json?page=0&size=2000" -o sample_data_ntpc.json
 
 # Search by name or area
 python find_stations.py 大安
@@ -123,9 +124,10 @@ nix develop --command adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 ## Data Source
 
-Station data is fetched from the official Taipei City Government open data API:
+Station data is fetched from the official open data APIs of Taipei City and New Taipei City:
 ```
 https://tcgbusfs.blob.core.windows.net/dotapp/youbike/v2/youbike_immediate.json
+https://data.ntpc.gov.tw/api/datasets/010e5b15-3823-4b20-b401-b1cf000550c5/json?page=0&size=2000
 ```
 
 ## Tech Stack

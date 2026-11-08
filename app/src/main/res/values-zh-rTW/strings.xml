@@ -12,6 +12,8 @@
     <string name="loading">載入中…</string>
     <string name="update_time">更新: %s</string>
     <string name="update_failed">更新失敗: %s</string>
+    <string name="source_taipei">臺北市</string>
+    <string name="source_new_taipei">新北市</string>
 
     <!-- Main Activity -->
     <string name="add_widget_hint">請將小工具加入主畫面</string>

@@ -12,6 +12,8 @@
     <string name="loading">Loading…</string>
     <string name="update_time">Updated: %s</string>
     <string name="update_failed">Update failed: %s</string>
+    <string name="source_taipei">Taipei</string>
+    <string name="source_new_taipei">New Taipei</string>
 
     <!-- Main Activity -->
     <string name="add_widget_hint">Add the widget to your home screen</string>

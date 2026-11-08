@@ -1,5 +1,6 @@
 package me.danielschaefer.android.youbike.data
 
+import java.text.SimpleDateFormat
 import java.util.Locale
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -27,6 +28,48 @@ data class Station(
             sna.removePrefix("YouBike2.0_")
         } else {
             snaen.removePrefix("YouBike2.0_")
+        }
+    }
+}
+
+/** Station as returned by the New Taipei City open data API; all values are strings. */
+@Serializable
+data class NewTaipeiStation(
+    val sno: String,
+    val sna: String,
+    val snaen: String,
+    val lat: String,
+    val lng: String,
+    // Available bikes (YouBike 2.0 + E-bikes)
+    @SerialName("sbi_quantity")
+    val availableRentBikes: String,
+    // Empty docks
+    val bemp: String,
+    // Last update, e.g. "20261108T161904"
+    val mday: String,
+    val act: String
+) {
+    /** Converts to the Taipei format used throughout the app, or null if the entry is malformed. */
+    fun toStation(): Station? {
+        return Station(
+            sno = sno,
+            sna = sna,
+            snaen = snaen,
+            latitude = lat.toDoubleOrNull() ?: return null,
+            longitude = lng.toDoubleOrNull() ?: return null,
+            availableRentBikes = availableRentBikes.toIntOrNull() ?: return null,
+            availableReturnBikes = bemp.toIntOrNull() ?: return null,
+            updateTime = convertTimestamp(mday),
+            act = act
+        )
+    }
+
+    private fun convertTimestamp(mday: String): String {
+        return try {
+            val date = SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.US).parse(mday) ?: return ""
+            SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(date)
+        } catch (e: Exception) {
+            ""
         }
     }
 }

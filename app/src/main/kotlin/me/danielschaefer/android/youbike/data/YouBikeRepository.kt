@@ -8,14 +8,31 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlin.math.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import me.danielschaefer.android.youbike.Config
+
+enum class StationSource { TAIPEI, NEW_TAIPEI }
+
+data class StationFetchResult(
+    val stations: List<Station>,
+    // Sources that could not be fetched; their stations are missing from [stations]
+    val failedSources: List<StationSource>,
+    // Newest station timestamp of the least recently updated source ("yyyy-MM-dd HH:mm:ss")
+    val updateTime: String?
+)
 
 class YouBikeRepository {
     private val client get() = sharedClient
 
     companion object {
+        // The API currently returns all ~1600 stations in one page of this size
+        private const val NEW_TAIPEI_PAGE_SIZE = 2000
+        private const val NEW_TAIPEI_MAX_PAGES = 5
+
         // Shared across worker runs; creating a client per run and never closing it leaks
         // its connection pool and dispatcher threads.
         private val sharedClient by lazy {
@@ -36,19 +53,70 @@ class YouBikeRepository {
         }
     }
 
-    suspend fun fetchStations(): List<Station> {
-        var lastException: Exception? = null
-        repeat(2) { attempt ->
-            try {
-                return client.get(Config.API_URL).body()
-            } catch (e: Exception) {
-                lastException = e
-                if (attempt == 0) {
-                    delay(1000)
-                }
-            }
+    /**
+     * Fetches Taipei and New Taipei stations in parallel. If one source fails, the stations of
+     * the other are still returned and the failure is reported in [StationFetchResult.failedSources].
+     * Throws if all sources fail.
+     */
+    suspend fun fetchStations(): StationFetchResult = coroutineScope {
+        val requests = mapOf(
+            StationSource.TAIPEI to async { fetchCatching { fetchTaipeiStations() } },
+            StationSource.NEW_TAIPEI to async { fetchCatching { fetchNewTaipeiStations() } }
+        )
+        val results = requests.mapValues { it.value.await() }
+
+        val succeeded = results.values.mapNotNull { it.getOrNull() }
+        if (succeeded.isEmpty()) {
+            throw results.values.first().exceptionOrNull()!!
         }
-        throw lastException!!
+
+        StationFetchResult(
+            stations = succeeded.flatten(),
+            failedSources = results.filterValues { it.isFailure }.keys.toList(),
+            // Report the oldest source's time so a stale source isn't hidden by a fresh one.
+            // All timestamps use the same "yyyy-MM-dd HH:mm:ss" format, so strings compare correctly.
+            updateTime = succeeded.mapNotNull { stations -> stations.maxOfOrNull { it.updateTime } }.minOrNull()
+        )
+    }
+
+    private suspend fun fetchTaipeiStations(): List<Station> = withRetry {
+        client.get(Config.TAIPEI_API_URL).body()
+    }
+
+    private suspend fun fetchNewTaipeiStations(): List<Station> {
+        val stations = mutableListOf<Station>()
+        for (page in 0 until NEW_TAIPEI_MAX_PAGES) {
+            val batch: List<NewTaipeiStation> = withRetry {
+                client.get(Config.NEW_TAIPEI_API_URL) {
+                    parameter("page", page)
+                    parameter("size", NEW_TAIPEI_PAGE_SIZE)
+                }.body()
+            }
+            stations += batch.mapNotNull { it.toStation() }
+            if (batch.size < NEW_TAIPEI_PAGE_SIZE) break
+        }
+        return stations
+    }
+
+    private suspend fun <T> withRetry(block: suspend () -> T): T {
+        try {
+            return block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            delay(1000)
+            return block()
+        }
+    }
+
+    private suspend fun <T> fetchCatching(block: suspend () -> T): kotlin.Result<T> {
+        return try {
+            kotlin.Result.success(block())
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            kotlin.Result.failure(e)
+        }
     }
 
     fun getFavoriteStations(allStations: List<Station>): List<StationWithDistance> {
