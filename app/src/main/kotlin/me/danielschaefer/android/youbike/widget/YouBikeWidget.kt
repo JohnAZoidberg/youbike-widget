@@ -5,6 +5,9 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -20,7 +23,10 @@ import androidx.glance.appwidget.lazy.items
 import androidx.glance.color.ColorProvider
 import androidx.glance.layout.*
 import androidx.glance.text.*
+import java.text.SimpleDateFormat
 import java.util.Locale
+import java.util.TimeZone
+import java.util.concurrent.TimeUnit
 import me.danielschaefer.android.youbike.R
 import me.danielschaefer.android.youbike.ThemePreference
 import me.danielschaefer.android.youbike.data.StationWithDistance
@@ -29,11 +35,28 @@ import me.danielschaefer.android.youbike.worker.WidgetUpdateWorker
 data class WidgetData(
     val nearestStations: List<StationWithDistance>,
     val favoriteStations: List<StationWithDistance>,
+    // Local time (HH:mm) of the last successful fetch
     val lastUpdated: String,
+    // Newest station timestamp reported by the API, "yyyy-MM-dd HH:mm:ss" in Taipei time
     val apiUpdateTime: String? = null,
     val hasLocation: Boolean,
     val error: String? = null
-)
+) {
+    /** Epoch millis of the data as reported by the API, or null if unknown. */
+    val apiUpdateMillis: Long?
+        get() = apiUpdateTime?.let {
+            try {
+                SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).apply {
+                    timeZone = TimeZone.getTimeZone("Asia/Taipei")
+                }.parse(it)?.time
+            } catch (e: Exception) {
+                null
+            }
+        }
+}
+
+/** Data older than this is highlighted as stale in the widget footer. */
+private val STALE_AFTER_MILLIS = TimeUnit.MINUTES.toMillis(30)
 
 private fun colorProvider(color: Color) = ColorProvider(color, color)
 
@@ -43,11 +66,17 @@ class YouBikeWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val data = YouBikeWidgetDataStore.getData(context)
-        val isDark = ThemePreference.isDark(context)
+        val initialData = YouBikeWidgetDataStore.getData(context)
+        val initialTheme = ThemePreference.load(context)
 
         provideContent {
-            WidgetContent(data, isDark)
+            // Observe the stores instead of capturing values read once before provideContent.
+            // While a Glance session is alive (~45s after each update or tap), update() only
+            // recomposes the running session and does not call provideGlance again, so captured
+            // values would keep showing the old data.
+            val data by remember { YouBikeWidgetDataStore.dataFlow(context) }.collectAsState(initialData)
+            val themeMode by remember { ThemePreference.modeFlow(context) }.collectAsState(initialTheme)
+            WidgetContent(data, ThemePreference.isDark(context, themeMode))
         }
     }
 
@@ -60,7 +89,7 @@ class YouBikeWidget : GlanceAppWidget() {
         val widthDp = size.width.value
         val isCompact = heightDp < 100
 
-        Log.d("YouBikeWidget", "Widget size: ${widthDp}x${heightDp}dp")
+        Log.d("YouBikeWidget", "Render ${widthDp}x${heightDp}dp, api=${data?.apiUpdateTime} last=${data?.lastUpdated}")
 
         GlanceTheme {
             Column(
@@ -86,8 +115,12 @@ class YouBikeWidget : GlanceAppWidget() {
                         .distinctBy { it.station.sno }
                         .sortedBy { it.distanceMeters.let { d -> if (d < 0) Int.MAX_VALUE else d } }
 
-                    // Use LazyColumn to fill available space
-                    LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
+                    val dataMillis = data.apiUpdateMillis
+                    val isStale = dataMillis != null &&
+                        System.currentTimeMillis() - dataMillis > STALE_AFTER_MILLIS
+
+                    // Use LazyColumn to fill the space between header and footer
+                    LazyColumn(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
                         items(allStations) { station ->
                             val isFavorite = station.station.sno in favoriteIds
                             StationRow(
@@ -98,6 +131,12 @@ class YouBikeWidget : GlanceAppWidget() {
                                 isDark = isDark
                             )
                         }
+                    }
+
+                    // Always show the footer when something is wrong, even on compact widgets
+                    if (!isCompact || isStale || data.error != null) {
+                        val timestamp = dataMillis?.let { formatTimestamp(it) } ?: data.lastUpdated
+                        FooterRow(context, timestamp, data.error, isStale, isDark)
                     }
                 } else {
                     LoadingContent(context, isDark)
@@ -250,7 +289,8 @@ class YouBikeWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun FooterRow(context: Context, timestamp: String, error: String?, isDark: Boolean) {
+    private fun FooterRow(context: Context, timestamp: String, error: String?, isStale: Boolean, isDark: Boolean) {
+        val warn = error != null || isStale
         Row(
             modifier = GlanceModifier
                 .fillMaxWidth()
@@ -264,7 +304,7 @@ class YouBikeWidget : GlanceAppWidget() {
                     fontSize = 10.sp
                 )
             )
-            if (error != null) {
+            if (warn) {
                 Text(
                     text = "⚠ ",
                     style = TextStyle(
@@ -276,7 +316,7 @@ class YouBikeWidget : GlanceAppWidget() {
             Text(
                 text = context.getString(R.string.update_time, timestamp),
                 style = TextStyle(
-                    color = if (error != null) {
+                    color = if (warn) {
                         colorProvider(if (isDark) Color(0xFFFF6666) else Color(0xFFCC0000))
                     } else {
                         colorProvider(if (isDark) Color(0xFF666666) else Color(0xFF999999))
@@ -285,6 +325,12 @@ class YouBikeWidget : GlanceAppWidget() {
                 )
             )
         }
+    }
+
+    private fun formatTimestamp(millis: Long): String {
+        val oneDay = TimeUnit.DAYS.toMillis(1)
+        val pattern = if (System.currentTimeMillis() - millis > oneDay) "MM-dd HH:mm" else "HH:mm"
+        return SimpleDateFormat(pattern, Locale.getDefault()).format(millis)
     }
 
     private fun headerStyle(isDark: Boolean) = TextStyle(

@@ -4,7 +4,9 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import me.danielschaefer.android.youbike.data.Station
@@ -39,11 +41,29 @@ object YouBikeWidgetDataStore {
         }
     }
 
-    suspend fun getData(context: Context): WidgetData? {
-        val prefs = context.widgetDataStore.data.first()
-        val nearestJson = prefs[NEAREST_STATIONS] ?: return null
-        val favoriteJson = prefs[FAVORITE_STATIONS] ?: return null
-        val lastUpdated = prefs[LAST_UPDATED] ?: return null
+    suspend fun getData(context: Context): WidgetData? = dataFlow(context).first()
+
+    fun dataFlow(context: Context): Flow<WidgetData?> =
+        context.widgetDataStore.data.map { prefs -> prefs.toWidgetData() }
+
+    private fun Preferences.toWidgetData(): WidgetData? {
+        val error = this[ERROR]
+        val nearestJson = this[NEAREST_STATIONS]
+        val favoriteJson = this[FAVORITE_STATIONS]
+        val lastUpdated = this[LAST_UPDATED]
+
+        if (nearestJson == null || favoriteJson == null || lastUpdated == null) {
+            // No successful update yet. Surface the error instead of "Loading…" forever.
+            return error?.let {
+                WidgetData(
+                    nearestStations = emptyList(),
+                    favoriteStations = emptyList(),
+                    lastUpdated = "",
+                    hasLocation = false,
+                    error = it
+                )
+            }
+        }
 
         return try {
             val nearest = json.decodeFromString<List<SerializableStationWithDistance>>(nearestJson)
@@ -55,9 +75,9 @@ object YouBikeWidgetDataStore {
                 nearestStations = nearest,
                 favoriteStations = favorites,
                 lastUpdated = lastUpdated,
-                apiUpdateTime = prefs[API_UPDATE_TIME],
-                hasLocation = prefs[HAS_LOCATION] ?: false,
-                error = prefs[ERROR]
+                apiUpdateTime = this[API_UPDATE_TIME],
+                hasLocation = this[HAS_LOCATION] ?: false,
+                error = error
             )
         } catch (e: Exception) {
             null
@@ -66,9 +86,9 @@ object YouBikeWidgetDataStore {
 
     suspend fun saveError(context: Context, error: String) {
         context.widgetDataStore.edit { prefs ->
+            // Only record the error. LAST_UPDATED keeps the time of the last successful
+            // update so the widget doesn't claim stale data is fresh.
             prefs[ERROR] = error
-            prefs[LAST_UPDATED] = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
-                .format(java.util.Date())
         }
     }
 }

@@ -1,8 +1,12 @@
 package me.danielschaefer.android.youbike
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.content.res.Configuration
 import androidx.appcompat.app.AppCompatDelegate
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import me.danielschaefer.android.youbike.worker.WidgetUpdateWorker
 
 enum class ThemeMode(val nightMode: Int) {
@@ -34,8 +38,19 @@ object ThemePreference {
         AppCompatDelegate.setDefaultNightMode(load(context).nightMode)
     }
 
-    fun isDark(context: Context): Boolean {
-        return when (load(context)) {
+    /** Emits the current theme mode and every subsequent change. */
+    fun modeFlow(context: Context): Flow<ThemeMode> = callbackFlow {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == KEY_THEME) trySend(load(context))
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        trySend(load(context))
+        awaitClose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
+
+    fun isDark(context: Context, mode: ThemeMode = load(context)): Boolean {
+        return when (mode) {
             ThemeMode.Dark -> true
             ThemeMode.Light -> false
             ThemeMode.System -> {
