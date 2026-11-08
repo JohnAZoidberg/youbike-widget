@@ -13,5 +13,7 @@ object Config {
     )
 
     const val MAX_NEAREST_STATIONS = 25
-    const val UPDATE_INTERVAL_MINUTES = 10L
+
+    // WorkManager enforces a minimum of 15 minutes for periodic work
+    const val UPDATE_INTERVAL_MINUTES = 15L
 }

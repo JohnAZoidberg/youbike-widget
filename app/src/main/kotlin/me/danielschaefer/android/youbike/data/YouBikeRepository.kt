@@ -13,14 +13,26 @@ import kotlinx.serialization.json.Json
 import me.danielschaefer.android.youbike.Config
 
 class YouBikeRepository {
-    private val client = HttpClient(Android) {
-        install(ContentNegotiation) {
-            json(
-                Json {
-                    ignoreUnknownKeys = true
-                    isLenient = true
+    private val client get() = sharedClient
+
+    companion object {
+        // Shared across worker runs; creating a client per run and never closing it leaks
+        // its connection pool and dispatcher threads.
+        private val sharedClient by lazy {
+            HttpClient(Android) {
+                engine {
+                    connectTimeout = 15_000
+                    socketTimeout = 30_000
                 }
-            )
+                install(ContentNegotiation) {
+                    json(
+                        Json {
+                            ignoreUnknownKeys = true
+                            isLenient = true
+                        }
+                    )
+                }
+            }
         }
     }
 
