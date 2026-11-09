@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
+import android.net.ConnectivityManager
+import android.net.Network
 import android.os.SystemClock
 import android.util.Log
 import androidx.core.content.ContextCompat
@@ -17,6 +19,8 @@ import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeoutOrNull
 import me.danielschaefer.android.youbike.Config
@@ -43,6 +47,18 @@ class WidgetUpdateWorker(
 
     override suspend fun doWork(): Result {
         Log.d(TAG, "Update started (attempt $runAttemptCount, tags=$tags)")
+
+        // WorkManager sometimes runs work directly in the already running app process instead
+        // of through JobScheduler, e.g. when a broadcast briefly wakes the app while the periodic
+        // update is due. Such runs don't get the network access JobScheduler grants to jobs, so
+        // once the app is back in the background Android blocks its network and requests fail
+        // with UnknownHostException. Wait a bit (JobScheduler may start the job in parallel,
+        // which unblocks the network) and otherwise retry soon instead of recording an error.
+        if (!awaitNetworkUnblocked(NETWORK_UNBLOCK_TIMEOUT_MS)) {
+            Log.w(TAG, "Network blocked for this app, retrying later")
+            return Result.retry()
+        }
+
         return try {
             val fetchResult = repository.fetchStations()
             val stations = fetchResult.stations
@@ -95,14 +111,47 @@ class WidgetUpdateWorker(
             // Work was stopped by WorkManager; don't record that as an error
             throw e
         } catch (e: Exception) {
+            // The network may also get blocked while the update runs (see above)
+            if (!awaitNetworkUnblocked(BLOCKED_CHECK_TIMEOUT_MS)) {
+                Log.w(TAG, "Update failed while network was blocked for this app, retrying later", e)
+                return Result.retry()
+            }
             Log.w(TAG, "Update failed", e)
             val errorMsg = context.getString(R.string.update_failed, e.message ?: "Unknown")
             YouBikeWidgetDataStore.saveError(context, errorMsg)
             updateWidgets()
             // Don't return Result.retry(): for periodic work WorkManager then schedules the next
-            // run with exponential backoff instead of the period, so a few failures in a row
-            // push the next update out by up to 5 hours. The next periodic run retries anyway.
+            // run with backoff instead of the period, so a few failures in a row (e.g. while
+            // offline) would push the next update out by hours. The next periodic run retries
+            // anyway. A blocked network is handled separately, where a retry is needed and short.
             Result.success()
+        }
+    }
+
+    /**
+     * Waits up to [timeoutMs] until Android lets this app use the default network. Returns false
+     * if the network stays blocked for the app. Having no network at all is not reported as
+     * blocked, as that is an ordinary failure.
+     */
+    private suspend fun awaitNetworkUnblocked(timeoutMs: Long): Boolean {
+        val connectivityManager = context.getSystemService(ConnectivityManager::class.java)
+        // null until the first callback, which reports the current state right after registering
+        val blocked = MutableStateFlow<Boolean?>(null)
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onBlockedStatusChanged(network: Network, isBlocked: Boolean) {
+                blocked.value = isBlocked
+            }
+
+            override fun onLost(network: Network) {
+                blocked.value = null
+            }
+        }
+        connectivityManager.registerDefaultNetworkCallback(callback)
+        return try {
+            withTimeoutOrNull(timeoutMs) { blocked.first { it == false } }
+            blocked.value != true
+        } finally {
+            connectivityManager.unregisterNetworkCallback(callback)
         }
     }
 
@@ -168,6 +217,12 @@ class WidgetUpdateWorker(
         private const val WORK_NAME = "youbike_widget_update"
         private const val REFRESH_WORK_NAME = "youbike_widget_refresh"
         private const val LOCATION_TIMEOUT_MS = 15_000L
+        private const val NETWORK_UNBLOCK_TIMEOUT_MS = 20_000L
+        private const val BLOCKED_CHECK_TIMEOUT_MS = 2_000L
+
+        // Retries are only requested when the network is blocked; keep them short and linear
+        // so the widget doesn't stay stale for long.
+        private const val RETRY_BACKOFF_SECONDS = 30L
         private val MAX_LAST_LOCATION_AGE_MS = TimeUnit.MINUTES.toMillis(30)
 
         fun schedule(context: Context) {
@@ -180,6 +235,7 @@ class WidgetUpdateWorker(
                 TimeUnit.MINUTES
             )
                 .setConstraints(constraints)
+                .setBackoffCriteria(BackoffPolicy.LINEAR, RETRY_BACKOFF_SECONDS, TimeUnit.SECONDS)
                 .build()
 
             // UPDATE (rather than KEEP) applies changes to the request to already-installed
@@ -200,6 +256,7 @@ class WidgetUpdateWorker(
             val request = OneTimeWorkRequestBuilder<WidgetUpdateWorker>()
                 .setConstraints(constraints)
                 .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+                .setBackoffCriteria(BackoffPolicy.LINEAR, RETRY_BACKOFF_SECONDS, TimeUnit.SECONDS)
                 .build()
 
             // Unique so repeated taps don't start several workers racing each other
